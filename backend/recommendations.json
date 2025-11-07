@@ -1,0 +1,122 @@
+[
+  {
+    "id": "rec-1",
+    "destination": "Paris, France",
+    "tagline": "The City of Love & Lights",
+    "image": "/attached_assets/generated_images/Paris_Eiffel_Tower_sunset_3a55a3cf.png",
+    "activities": [
+      {
+        "name": "Visit the Eiffel Tower",
+        "description": "Climb to the top for breathtaking views of Paris",
+        "icon": "landmark"
+      },
+      {
+        "name": "Louvre Museum",
+        "description": "Explore the world's largest art museum",
+        "icon": "museum"
+      },
+      {
+        "name": "Seine River Cruise",
+        "description": "Romantic evening cruise along the Seine",
+        "icon": "ship"
+      },
+      {
+        "name": "Montmartre Walking Tour",
+        "description": "Discover the artistic heart of Paris",
+        "icon": "walking"
+      }
+    ],
+    "bestTime": "April to June, September to October",
+    "estimatedBudget": "$2,000 - $3,500"
+  },
+  {
+    "id": "rec-2",
+    "destination": "Bali, Indonesia",
+    "tagline": "Tropical Paradise & Culture",
+    "image": "/attached_assets/generated_images/Bali_rice_terraces_f5c433db.png",
+    "activities": [
+      {
+        "name": "Rice Terrace Trekking",
+        "description": "Walk through stunning Tegalalang rice terraces",
+        "icon": "mountain"
+      },
+      {
+        "name": "Temple Visits",
+        "description": "Explore ancient temples like Tanah Lot",
+        "icon": "landmark"
+      },
+      {
+        "name": "Beach Surfing",
+        "description": "Catch waves at famous surf spots",
+        "icon": "waves"
+      },
+      {
+        "name": "Yoga Retreat",
+        "description": "Find inner peace in Ubud",
+        "icon": "sparkles"
+      }
+    ],
+    "bestTime": "April to October",
+    "estimatedBudget": "$1,500 - $2,500"
+  },
+  {
+    "id": "rec-3",
+    "destination": "Tokyo, Japan",
+    "tagline": "Modern Meets Traditional",
+    "image": "/attached_assets/generated_images/Tokyo_cityscape_night_e65e930a.png",
+    "activities": [
+      {
+        "name": "Shibuya Crossing",
+        "description": "Experience the world's busiest intersection",
+        "icon": "landmark"
+      },
+      {
+        "name": "Cherry Blossom Viewing",
+        "description": "Enjoy hanami in spring season",
+        "icon": "sparkles"
+      },
+      {
+        "name": "Sushi Making Class",
+        "description": "Learn authentic Japanese cuisine",
+        "icon": "sparkles"
+      },
+      {
+        "name": "Traditional Tea Ceremony",
+        "description": "Experience ancient Japanese culture",
+        "icon": "sparkles"
+      }
+    ],
+    "bestTime": "March to May, September to November",
+    "estimatedBudget": "$2,500 - $4,000"
+  },
+  {
+    "id": "rec-4",
+    "destination": "Santorini, Greece",
+    "tagline": "Stunning Sunsets & White Architecture",
+    "image": "/attached_assets/generated_images/Santorini_sunset_view_5080c6e0.png",
+    "activities": [
+      {
+        "name": "Oia Sunset Viewing",
+        "description": "Watch world-famous sunsets in Oia village",
+        "icon": "sparkles"
+      },
+      {
+        "name": "Wine Tasting Tour",
+        "description": "Sample local volcanic wines",
+        "icon": "sparkles"
+      },
+      {
+        "name": "Volcanic Beach Visit",
+        "description": "Relax at unique red and black sand beaches",
+        "icon": "waves"
+      },
+      {
+        "name": "Sailing Trip",
+        "description": "Cruise around the caldera",
+        "icon": "ship"
+      }
+    ],
+    "bestTime": "April to November",
+    "estimatedBudget": "$2,000 - $3,000"
+  }
+]
