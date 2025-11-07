@@ -1,3 +1,11 @@
+# Node modules and build output for frontend
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -214,3 +222,4 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+

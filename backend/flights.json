@@ -1,0 +1,42 @@
+[
+  {
+    "id": "flight-1",
+    "destinationId": "paris-france",
+    "airline": "Air France",
+    "departureAirport": "JFK",
+    "arrivalAirport": "CDG",
+    "price": 520,
+    "duration": "7h 15m",
+    "class": "Economy"
+  },
+  {
+    "id": "flight-2",
+    "destinationId": "paris-france",
+    "airline": "Delta",
+    "departureAirport": "JFK",
+    "arrivalAirport": "CDG",
+    "price": 580,
+    "duration": "7h 30m",
+    "class": "Economy"
+  },
+  {
+    "id": "flight-3",
+    "destinationId": "tokyo-japan",
+    "airline": "Japan Airlines",
+    "departureAirport": "JFK",
+    "arrivalAirport": "NRT",
+    "price": 890,
+    "duration": "14h 0m",
+    "class": "Economy"
+  },
+  {
+    "id": "flight-4",
+    "destinationId": "bali-indonesia",
+    "airline": "Singapore Airlines",
+    "departureAirport": "JFK",
+    "arrivalAirport": "DPS",
+    "price": 1150,
+    "duration": "19h 45m",
+    "class": "Economy"
+  }
+]

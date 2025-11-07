@@ -1,0 +1,38 @@
+[
+  {
+    "id": "hotel-1",
+    "destinationId": "paris-france",
+    "name": "Hotel de la Paix",
+    "rating": 4.5,
+    "pricePerNight": 220,
+    "amenities": ["WiFi", "Breakfast", "Gym"],
+    "reviewCount": 850
+  },
+  {
+    "id": "hotel-2",
+    "destinationId": "paris-france",
+    "name": "Le Marais Boutique",
+    "rating": 4.7,
+    "pricePerNight": 280,
+    "amenities": ["WiFi", "Breakfast", "Spa"],
+    "reviewCount": 620
+  },
+  {
+    "id": "hotel-3",
+    "destinationId": "tokyo-japan",
+    "name": "Tokyo Grand Hotel",
+    "rating": 4.6,
+    "pricePerNight": 165,
+    "amenities": ["WiFi", "Pool", "Restaurant"],
+    "reviewCount": 1200
+  },
+  {
+    "id": "hotel-4",
+    "destinationId": "bali-indonesia",
+    "name": "Bali Beach Resort",
+    "rating": 4.8,
+    "pricePerNight": 95,
+    "amenities": ["WiFi", "Beach Access", "Spa", "Pool"],
+    "reviewCount": 980
+  }
+]
