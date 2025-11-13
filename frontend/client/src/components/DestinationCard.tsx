@@ -43,7 +43,7 @@ export default function DestinationCard({
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
-          src={`/attached_assets/generated_images/${image}`}
+          src={`/frontend/assets/images/${image}`}
           alt={`${name}, ${country}`}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
         />

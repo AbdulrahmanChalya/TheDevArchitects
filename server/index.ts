@@ -74,15 +74,10 @@ app.use((req, res, next) => {
   // Default to 5000 if not specified
   const port = parseInt(process.env.PORT || '5000', 10);
   
-  // Use localhost/127.0.0.1 for development to avoid ENOTSUP errors on macOS
-  // Use 0.0.0.0 for production/deployment to accept connections from any IP
-  const isDevelopment = app.get("env") === "development";
-  const host = process.env.HOST || (isDevelopment ? "127.0.0.1" : "0.0.0.0");
+  // Use 0.0.0.0 to accept connections from any IP
+  const host = process.env.HOST || "0.0.0.0";
 
   server.listen(port, host, () => {
     log(`Server running on http://${host}:${port}`);
-    if (host === "127.0.0.1") {
-      log(`Access your app at http://localhost:${port}`);
-    }
   });
 })();

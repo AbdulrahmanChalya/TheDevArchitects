@@ -3,7 +3,7 @@
     "id": "rec-1",
     "destination": "Paris, France",
     "tagline": "The City of Love & Lights",
-    "image": "/attached_assets/generated_images/Paris_Eiffel_Tower_sunset_3a55a3cf.png",
+    "image": "/frontend/assets/images/Paris_Eiffel_Tower_sunset_3a55a3cf.png",
     "activities": [
       {
         "name": "Visit the Eiffel Tower",
@@ -33,7 +33,7 @@
     "id": "rec-2",
     "destination": "Bali, Indonesia",
     "tagline": "Tropical Paradise & Culture",
-    "image": "/attached_assets/generated_images/Bali_rice_terraces_f5c433db.png",
+    "image": "/frontend/assets/images/Bali_rice_terraces_f5c433db.png",
     "activities": [
       {
         "name": "Rice Terrace Trekking",
@@ -63,7 +63,7 @@
     "id": "rec-3",
     "destination": "Tokyo, Japan",
     "tagline": "Modern Meets Traditional",
-    "image": "/attached_assets/generated_images/Tokyo_cityscape_night_e65e930a.png",
+    "image": "/frontend/assets/images/Tokyo_cityscape_night_e65e930a.png",
     "activities": [
       {
         "name": "Shibuya Crossing",
@@ -93,7 +93,7 @@
     "id": "rec-4",
     "destination": "Santorini, Greece",
     "tagline": "Stunning Sunsets & White Architecture",
-    "image": "/attached_assets/generated_images/Santorini_sunset_view_5080c6e0.png",
+    "image": "/frontend/assets/images/Santorini_sunset_view_5080c6e0.png",
     "activities": [
       {
         "name": "Oia Sunset Viewing",

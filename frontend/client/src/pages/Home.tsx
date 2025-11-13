@@ -4,7 +4,6 @@ import SearchBar from "@/components/SearchBar";
 import DestinationCard from "@/components/DestinationCard";
 import RecommendationCard from "@/components/RecommendationCard";
 import Footer from "@/components/Footer";
-import heroImage from "@assets/generated_images/Hero_tropical_beach_scene_e5fdeadc.png";
 import { Lightbulb } from "lucide-react";
 
 interface Destination {
@@ -62,7 +61,7 @@ export default function Home() {
       <section 
         className="relative min-h-[80vh] flex items-center justify-center bg-cover bg-center"
         style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url(${heroImage})`
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('/hero-bg.png')`
         }}
       >
         <div className="container mx-auto px-4 md:px-6 text-center z-10">

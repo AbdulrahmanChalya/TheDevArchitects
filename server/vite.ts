@@ -41,13 +41,14 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
+  app.use("*", async (req, res, next) => { 
     const url = req.originalUrl;
 
     try {
       const clientTemplate = path.resolve(
         import.meta.dirname,
         "..",
+        "frontend",
         "client",
         "index.html",
       );
