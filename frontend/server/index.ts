@@ -18,7 +18,7 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: false }));
 
 // Serve backend JSON files
-app.use('/backend', express.static(path.join(process.cwd(), 'backend')));
+app.use('/backend', express.static(path.join(process.cwd(), '..', 'backend')));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -72,7 +72,7 @@ app.use((req, res, next) => {
 
   // Serve on the port specified in the environment variable PORT
   // Default to 5000 if not specified
-  const port = parseInt(process.env.PORT || '5000', 10);
+  const port = parseInt(process.env.PORT || '3000', 10);
   
   // Use 0.0.0.0 to accept connections from any IP
   const host = process.env.HOST || "0.0.0.0";
