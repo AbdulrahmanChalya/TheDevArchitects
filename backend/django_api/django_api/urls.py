@@ -20,9 +20,12 @@ from ninja import NinjaAPI
 from ninja.errors import HttpError
 import json
 from typing import Optional
+from pathlib import Path
 
 api = NinjaAPI()
 
+
+DATA_ROOT = Path(__file__).resolve().parents[2]
 def load_json(filename: str):
     with open(f"data/{filename}", "r") as f:
         return json.load(f)
