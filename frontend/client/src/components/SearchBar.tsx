@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MapPin, Users, DollarSign, Calendar, Bed, Search } from "lucide-react";
+import { MapPin, Users, DollarSign, Calendar, Bed, Search, Plane, PlaneTakeoff, PlaneLanding } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,10 +28,39 @@ const DESTINATION_SUGGESTIONS = [
   "Rome, Italy"
 ];
 
+const AIRPORT_SUGGESTIONS = [
+  "JFK - John F. Kennedy International Airport (New York)",
+  "LAX - Los Angeles International Airport (Los Angeles)",
+  "LHR - Heathrow Airport (London)",
+  "CDG - Charles de Gaulle Airport (Paris)",
+  "NRT - Narita International Airport (Tokyo)",
+  "DXB - Dubai International Airport (Dubai)",
+  "SIN - Singapore Changi Airport (Singapore)",
+  "YYZ - Toronto Pearson International Airport (Toronto)",
+  "SFO - San Francisco International Airport (San Francisco)",
+  "ORD - O'Hare International Airport (Chicago)"
+];
+
+// Airport locations for proximity calculation
+const AIRPORT_LOCATIONS = {
+  "JFK": { lat: 40.6413, lng: -73.7781, name: "JFK - John F. Kennedy International Airport (New York)" },
+  "LAX": { lat: 33.9425, lng: -118.4081, name: "LAX - Los Angeles International Airport (Los Angeles)" },
+  "LHR": { lat: 51.4700, lng: -0.4543, name: "LHR - Heathrow Airport (London)" },
+  "CDG": { lat: 49.0097, lng: 2.5479, name: "CDG - Charles de Gaulle Airport (Paris)" },
+  "NRT": { lat: 35.7720, lng: 140.3929, name: "NRT - Narita International Airport (Tokyo)" },
+  "DXB": { lat: 25.2532, lng: 55.3657, name: "DXB - Dubai International Airport (Dubai)" },
+  "SIN": { lat: 1.3644, lng: 103.9915, name: "SIN - Singapore Changi Airport (Singapore)" },
+  "YYZ": { lat: 43.6777, lng: -79.6248, name: "YYZ - Toronto Pearson International Airport (Toronto)" },
+  "SFO": { lat: 37.6213, lng: -122.3790, name: "SFO - San Francisco International Airport (San Francisco)" },
+  "ORD": { lat: 41.9742, lng: -87.9073, name: "ORD - O'Hare International Airport (Chicago)" }
+};
+
 export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const [, setLocation] = useLocation();
   const [searchData, setSearchData] = useState({
     destination: "",
+    departureAirport: "",
+    arrivalAirport: "",
     people: "",
     budget: "",
     startDate: undefined as Date | undefined,
@@ -49,17 +78,31 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const [showTravelersDropdown, setShowTravelersDropdown] = useState(false);
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [dateError, setDateError] = useState("");
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [nearbyAirports, setNearbyAirports] = useState<string[]>([]);
   const travelersRef = useRef<HTMLDivElement>(null);
   const dateRef = useRef<HTMLDivElement>(null);
 
   const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
+  const [showDepartureAirportSuggestions, setShowDepartureAirportSuggestions] = useState(false);
+  const [showArrivalAirportSuggestions, setShowArrivalAirportSuggestions] = useState(false);
   const [filteredDestinations, setFilteredDestinations] = useState(DESTINATION_SUGGESTIONS);
+  const [filteredDepartureAirports, setFilteredDepartureAirports] = useState(AIRPORT_SUGGESTIONS);
+  const [filteredArrivalAirports, setFilteredArrivalAirports] = useState(AIRPORT_SUGGESTIONS);
   const destinationRef = useRef<HTMLDivElement>(null);
+  const departureAirportRef = useRef<HTMLDivElement>(null);
+  const arrivalAirportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (destinationRef.current && !destinationRef.current.contains(event.target as Node)) {
         setShowDestinationSuggestions(false);
+      }
+      if (departureAirportRef.current && !departureAirportRef.current.contains(event.target as Node)) {
+        setShowDepartureAirportSuggestions(false);
+      }
+      if (arrivalAirportRef.current && !arrivalAirportRef.current.contains(event.target as Node)) {
+        setShowArrivalAirportSuggestions(false);
       }
       if (travelersRef.current && !travelersRef.current.contains(event.target as Node)) {
         setShowTravelersDropdown(false);
@@ -72,6 +115,75 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Calculate distance between two coordinates
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // Get user's current location
+  const getCurrentLocation = () => {
+    console.log("getCurrentLocation called");
+    
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by this browser");
+      return;
+    }
+
+    // Clear any existing nearby airports first
+    setNearbyAirports([]);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        console.log("Location received:", position.coords);
+        const { latitude, longitude } = position.coords;
+        
+        // Find nearby airports
+        const airportsWithDistance = Object.entries(AIRPORT_LOCATIONS).map(([code, airport]) => ({
+          code,
+          name: airport.name,
+          distance: calculateDistance(latitude, longitude, airport.lat, airport.lng)
+        }));
+        
+        // Sort by distance and get top 3
+        const nearby = airportsWithDistance
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 3)
+          .map(airport => airport.name);
+        
+        console.log("Nearby airports found:", nearby);
+        setNearbyAirports(nearby);
+        setFilteredDepartureAirports(nearby);
+        
+        // Show success message
+        alert(`Found ${nearby.length} nearby airports based on your location!`);
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        
+        if (error.code === 1) {
+          alert("Location access denied. Please click the location icon in your browser's address bar and select 'Allow' to enable location access.");
+        } else {
+          alert("Unable to get your location. Please try again or select airports manually.");
+        }
+        
+        // Fallback to all airports
+        setFilteredDepartureAirports(AIRPORT_SUGGESTIONS);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 600000
+      }
+    );
+  };
 
   const autoAdjustRooms = (adults: number, children: number, currentRooms: number) => {
     const totalGuests = adults + children;
@@ -164,6 +276,8 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     console.log("Search triggered with:", searchData);
     const params = new URLSearchParams({
       destination: searchData.destination,
+      departureAirport: searchData.departureAirport,
+      arrivalAirport: searchData.arrivalAirport,
       people: searchData.people,
       budget: searchData.budget,
       startDate: searchData.startDate ? format(searchData.startDate, 'yyyy-MM-dd') : '',
@@ -183,6 +297,35 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     setShowDestinationSuggestions(true);
   };
 
+  const handleDepartureAirportChange = (value: string) => {
+    setSearchData({ ...searchData, departureAirport: value });
+    const baseAirports = nearbyAirports.length > 0 ? nearbyAirports : AIRPORT_SUGGESTIONS;
+    const filtered = baseAirports.filter(airport =>
+      airport.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredDepartureAirports(filtered);
+    setShowDepartureAirportSuggestions(true);
+  };
+
+  const handleArrivalAirportChange = (value: string) => {
+    setSearchData({ ...searchData, arrivalAirport: value });
+    const filtered = AIRPORT_SUGGESTIONS.filter(airport =>
+      airport.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredArrivalAirports(filtered);
+    setShowArrivalAirportSuggestions(true);
+  };
+
+  const selectDepartureAirport = (airport: string) => {
+    setSearchData({ ...searchData, departureAirport: airport });
+    setShowDepartureAirportSuggestions(false);
+  };
+
+  const selectArrivalAirport = (airport: string) => {
+    setSearchData({ ...searchData, arrivalAirport: airport });
+    setShowArrivalAirportSuggestions(false);
+  };
+
   const selectDestination = (destination: string) => {
     setSearchData({ ...searchData, destination });
     setShowDestinationSuggestions(false);
@@ -197,18 +340,18 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
       data-testid="form-search"
     >
       {/* Destination Field - Full Width Row */}
-      <div className="mb-6">
-        <div className="space-y-3 relative" ref={destinationRef}>
+      <div className="mb-4">
+        <div className="space-y-2 relative" ref={destinationRef}>
           <Label htmlFor="destination" className="text-sm font-semibold text-gray-700">
             Where are you going?
           </Label>
           <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500 z-10" />
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 z-10" />
             <Input
               id="destination"
               type="text"
               placeholder="Search destinations..."
-              className="pl-12 h-12 text-base border-2 hover:border-blue-300 focus:border-blue-500 transition-colors"
+              className="pl-10 h-10 text-sm border-2 hover:border-blue-300 focus:border-blue-500 transition-colors"
               value={searchData.destination}
               onChange={(e) => handleDestinationChange(e.target.value)}
               onFocus={() => setShowDestinationSuggestions(true)}
@@ -236,8 +379,107 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
         </div>
       </div>
 
+      {/* Airport Fields Row */}
+      <div className="mb-4 grid gap-4 grid-cols-1 md:grid-cols-2">
+        {/* Departure Airport */}
+        <div className="space-y-2 relative" ref={departureAirportRef}>
+          <Label htmlFor="departureAirport" className="text-sm font-semibold text-gray-700">
+            Departure Airport
+          </Label>
+          <div className="relative">
+            <PlaneTakeoff className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 z-10" />
+            <Input
+              id="departureAirport"
+              type="text"
+              placeholder="Select departure airport..."
+              className="pl-10 h-10 text-sm border-2 hover:border-blue-300 focus:border-blue-500 transition-colors"
+              value={searchData.departureAirport}
+              onChange={(e) => handleDepartureAirportChange(e.target.value)}
+              onFocus={() => setShowDepartureAirportSuggestions(true)}
+            />
+          </div>
+          {showDepartureAirportSuggestions && (
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-auto">
+              {/* Current Location Option */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  getCurrentLocation();
+                }}
+                className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm text-blue-600 border-b border-gray-100 font-medium transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Use Current Location for Nearby Airports
+                </div>
+              </button>
+              
+              {nearbyAirports.length > 0 && (
+                <div className="px-4 py-2 text-xs text-gray-500 border-b bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    Nearby airports based on your location
+                  </div>
+                </div>
+              )}
+              {filteredDepartureAirports.map((airport) => (
+                <button
+                  key={airport}
+                  type="button"
+                  onClick={() => selectDepartureAirport(airport)}
+                  className="w-full text-left px-4 py-2.5 hover:bg-gray-50 text-sm text-foreground transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <PlaneTakeoff className="h-4 w-4 text-muted-foreground" />
+                    {airport}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Arrival Airport */}
+        <div className="space-y-2 relative" ref={arrivalAirportRef}>
+          <Label htmlFor="arrivalAirport" className="text-sm font-semibold text-gray-700">
+            Arrival Airport
+          </Label>
+          <div className="relative">
+            <PlaneLanding className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 z-10" />
+            <Input
+              id="arrivalAirport"
+              type="text"
+              placeholder="Select arrival airport..."
+              className="pl-10 h-10 text-sm border-2 hover:border-blue-300 focus:border-blue-500 transition-colors"
+              value={searchData.arrivalAirport}
+              onChange={(e) => handleArrivalAirportChange(e.target.value)}
+              onFocus={() => setShowArrivalAirportSuggestions(true)}
+            />
+          </div>
+          {showArrivalAirportSuggestions && filteredArrivalAirports.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-popover border border-popover-border rounded-lg shadow-lg max-h-60 overflow-auto">
+              {filteredArrivalAirports.map((airport) => (
+                <button
+                  key={airport}
+                  type="button"
+                  onClick={() => selectArrivalAirport(airport)}
+                  className="w-full text-left px-4 py-2.5 hover-elevate text-sm text-foreground"
+                >
+                  <div className="flex items-center gap-2">
+                    <PlaneLanding className="h-4 w-4 text-muted-foreground" />
+                    {airport}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Other Search Fields */}
-      <div className={`grid gap-6 ${isHero ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2'}`}>
+      <div className={`grid gap-4 ${isHero ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2'}`}>
 
         {/* Date Range */}
         <div className="space-y-3 relative" ref={dateRef}>
