@@ -47,7 +47,6 @@ def search(
     endDate: Optional[str] = None,
     rooms: Optional[int] = None,
 ):
-    # TODO: Implement search logic here
     destinations = load_json("destinations.json")
     flights = load_json("flights.json")
     hotels = load_json("hotels.json")
