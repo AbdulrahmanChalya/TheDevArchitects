@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path
 from ninja import NinjaAPI
@@ -47,13 +48,53 @@ def search(
     rooms: Optional[int] = None,
 ):
     # TODO: Implement search logic here
+    destinations = load_json("destinations.json")
+    flights = load_json("flights.json")
+    hotels = load_json("hotels.json")
+    
+    def match_destination(d):
+        if destination:
+            text = f"{d.get('name', '')} {d.get('country', '')}".lower()
+            if destination.lower() not in text:
+                return False
+
+        # Budget filter: destination pricePerNight
+        if budget is not None:
+            price = d.get("pricePerNight")
+            if price is not None and price > budget:
+                return False
+
+
+        return True
+
+    # Filter destinations
+    matched_destinations = [d for d in destinations if match_destination(d)]
+
+    # Build flight list connected to results
+    results = []
+    for d in matched_destinations:
+        dest_id = d["id"]
+
+        related_flights = [f for f in flights if f["destinationId"] == dest_id]
+        related_hotels = [h for h in hotels if h["destinationId"] == dest_id]
+
+        results.append({
+            "destination": d,
+            "flights": related_flights,
+            "hotels": related_hotels
+        })
+
     return {
-        "destination": destination,
-        "people": people,
-        "budget": budget,
-        "startDate": startDate,
-        "endDate": endDate,
-        "rooms": rooms,
+        "filters": {
+            "destination": destination,
+            "people": people,
+            "budget": budget,
+            "startDate": startDate,
+            "endDate": endDate,
+            "rooms": rooms,
+        },
+        "count": len(results),
+        "results": results,
     }
 
 @api.get("/destination/{destination_id}", url_name="destination_detail")
