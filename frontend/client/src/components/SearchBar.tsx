@@ -116,6 +116,46 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Restore search data from URL parameters on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    const destination = urlParams.get('destination');
+    const departureAirport = urlParams.get('departureAirport');
+    const arrivalAirport = urlParams.get('arrivalAirport');
+    const people = urlParams.get('people');
+    const budget = urlParams.get('budget');
+    const startDate = urlParams.get('startDate');
+    const endDate = urlParams.get('endDate');
+    const rooms = urlParams.get('rooms');
+
+    if (destination || departureAirport || arrivalAirport || people || budget || startDate || endDate || rooms) {
+      setSearchData({
+        destination: destination || "",
+        departureAirport: departureAirport || "",
+        arrivalAirport: arrivalAirport || "",
+        people: people || "",
+        budget: budget || "",
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        rooms: rooms || ""
+      });
+
+      // Restore travelers data if people/rooms are available
+      if (people || rooms) {
+        const totalPeople = parseInt(people || "1");
+        const totalRooms = parseInt(rooms || "1");
+        
+        setTravelers({
+          adults: Math.max(1, totalPeople), // Assume all are adults for simplicity
+          children: 0,
+          pets: 0,
+          rooms: totalRooms
+        });
+      }
+    }
+  }, []);
+
   // Calculate distance between two coordinates
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 6371; // Earth's radius in kilometers
