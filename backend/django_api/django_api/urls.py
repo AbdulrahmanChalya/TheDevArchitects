@@ -111,6 +111,38 @@ def destination_detail(request, destination_id: str):
             return d
     raise HttpError(404, "Destination not found")
 
+@api.get("/airports/nearby", url_name="nearby_airports")
+def nearby_airports(request, lat: float, lng: float, limit: int = 5):
+    """
+    Return nearby airports based on latitude and longitude.
+    """
+    import math
+    
+    airports = load_json("airports.json")
+    
+    def calculate_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+        R = 6371  # Earth's radius in kilometers
+        dLat = math.radians(lat2 - lat1)
+        dLng = math.radians(lng2 - lng1)
+        a = (math.sin(dLat/2) * math.sin(dLat/2) +
+             math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) *
+             math.sin(dLng/2) * math.sin(dLng/2))
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        return R * c
+    
+    # Calculate distance for each airport
+    airports_with_distance = []
+    for airport in airports:
+        distance = calculate_distance(lat, lng, airport["lat"], airport["lng"])
+        airports_with_distance.append({
+            **airport,
+            "distance": round(distance, 2)
+        })
+    
+    # Sort by distance and return top results
+    airports_with_distance.sort(key=lambda x: x["distance"])
+    return airports_with_distance[:limit]
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", api.urls)
