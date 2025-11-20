@@ -114,11 +114,13 @@ def destination_detail(request, destination_id: str):
 @api.get("/airports/nearby", url_name="nearby_airports")
 def nearby_airports(request, lat: float, lng: float, limit: int = 5):
     """
-    Return nearby airports based on latitude and longitude.
+    Return nearby airports based on latitude and longitude using Airports API.
     """
     import math
+    import requests
     
-    airports = load_json("airports.json")
+    API_KEY = "qANw6xtv4W9NJj5etNsyaQ==YalDpMqdceAjYs3e"
+    API_URL = "https://api.api-ninjas.com/v1/airports"
     
     def calculate_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
         R = 6371  # Earth's radius in kilometers
@@ -130,18 +132,45 @@ def nearby_airports(request, lat: float, lng: float, limit: int = 5):
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
         return R * c
     
-    # Calculate distance for each airport
-    airports_with_distance = []
-    for airport in airports:
-        distance = calculate_distance(lat, lng, airport["lat"], airport["lng"])
-        airports_with_distance.append({
-            **airport,
-            "distance": round(distance, 2)
-        })
-    
-    # Sort by distance and return top results
-    airports_with_distance.sort(key=lambda x: x["distance"])
-    return airports_with_distance[:limit]
+    try:
+        # Fetch airports from API (get more to filter by distance)
+        headers = {"X-Api-Key": API_KEY}
+        response = requests.get(API_URL, headers=headers, params={"limit": 30})
+        response.raise_for_status()
+        
+        airports = response.json()
+        
+        # Calculate distance for each airport and filter valid ones
+        airports_with_distance = []
+        for airport in airports:
+            if airport.get("latitude") and airport.get("longitude"):
+                distance = calculate_distance(lat, lng, airport["latitude"], airport["longitude"])
+                airports_with_distance.append({
+                    "code": airport.get("iata", airport.get("icao", "N/A")),
+                    "name": airport.get("name", "Unknown"),
+                    "city": airport.get("city", "Unknown"),
+                    "country": airport.get("country", "Unknown"),
+                    "lat": airport["latitude"],
+                    "lng": airport["longitude"],
+                    "distance": round(distance, 2)
+                })
+        
+        # Sort by distance and return top results
+        airports_with_distance.sort(key=lambda x: x["distance"])
+        return airports_with_distance[:limit]
+        
+    except Exception as e:
+        # Fallback to local data if API fails
+        airports = load_json("airports.json")
+        airports_with_distance = []
+        for airport in airports:
+            distance = calculate_distance(lat, lng, airport["lat"], airport["lng"])
+            airports_with_distance.append({
+                **airport,
+                "distance": round(distance, 2)
+            })
+        airports_with_distance.sort(key=lambda x: x["distance"])
+        return airports_with_distance[:limit]
 
 urlpatterns = [
     path('admin/', admin.site.urls),
