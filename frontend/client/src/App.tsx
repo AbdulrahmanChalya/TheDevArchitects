@@ -13,6 +13,7 @@ import BookingSuccess from "@/pages/BookingSuccess";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import NotFound from "@/pages/not-found";
+import PaymentPage from "./pages/PaymentPage";
 
 function Router() {
   return (
@@ -22,7 +23,7 @@ function Router() {
       <Route path="/destination/:destination" component={DestinationDetails} />
       <Route path="/book-hotel" component={BookHotel} />
       <Route path="/book-flight" component={BookFlight} />
-      <Route path="/payment" component={Payment} />
+      <Route path="/payment" component={PaymentPage} />
       <Route path="/booking-success" component={BookingSuccess} />
       <Route path="/signin" component={SignIn} />
       <Route path="/signup" component={SignUp} />

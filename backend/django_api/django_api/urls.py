@@ -22,6 +22,8 @@ from ninja.errors import HttpError
 import json
 from typing import Optional
 from pathlib import Path
+from .airports_service import get_nearby_airports
+from .payments import router as payments_router
 
 api = NinjaAPI()
 
@@ -109,6 +111,13 @@ def destination_detail(request, destination_id: str):
         if str(d.get("name", "")).lower() == str(destination_id).lower():
             return d
     raise HttpError(404, "Destination not found")
+
+@api.get("/airports/nearby", url_name="nearby_airports")
+def nearby_airports(request, lat: float, lng: float, limit: int = 5):
+    """Return nearby airports based on latitude and longitude."""
+    return get_nearby_airports(lat, lng, limit)
+    
+api.add_router("/payments", payments_router)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

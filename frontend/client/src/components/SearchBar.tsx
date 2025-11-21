@@ -169,7 +169,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   };
 
   // Get user's current location
-  const getCurrentLocation = () => {
+  const getCurrentLocation = async () => {
     console.log("getCurrentLocation called");
     
     if (!navigator.geolocation) {
@@ -181,29 +181,50 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     setNearbyAirports([]);
     
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         console.log("Location received:", position.coords);
         const { latitude, longitude } = position.coords;
         
-        // Find nearby airports
-        const airportsWithDistance = Object.entries(AIRPORT_LOCATIONS).map(([code, airport]) => ({
-          code,
-          name: airport.name,
-          distance: calculateDistance(latitude, longitude, airport.lat, airport.lng)
-        }));
-        
-        // Sort by distance and get top 3
-        const nearby = airportsWithDistance
-          .sort((a, b) => a.distance - b.distance)
-          .slice(0, 3)
-          .map(airport => airport.name);
-        
-        console.log("Nearby airports found:", nearby);
-        setNearbyAirports(nearby);
-        setFilteredDepartureAirports(nearby);
-        
-        // Show success message
-        alert(`Found ${nearby.length} nearby airports based on your location!`);
+        try {
+          // Fetch nearby airports from API
+          const response = await fetch(`http://localhost:8000/api/airports/nearby?lat=${latitude}&lng=${longitude}&limit=5`);
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch nearby airports');
+          }
+          
+          const airports = await response.json();
+          console.log("Nearby airports from API:", airports);
+          
+          // Format airport names for display
+          const nearby = airports.map((airport: any) => 
+            `${airport.code} - ${airport.name} (${airport.city}) - ${airport.distance}km`
+          );
+          
+          setNearbyAirports(nearby);
+          setFilteredDepartureAirports(nearby);
+          
+          // Show success message
+          alert(`Found ${nearby.length} nearby airports based on your location!`);
+        } catch (error) {
+          console.error("Error fetching nearby airports:", error);
+          
+          // Fallback to local calculation
+          const airportsWithDistance = Object.entries(AIRPORT_LOCATIONS).map(([code, airport]) => ({
+            code,
+            name: airport.name,
+            distance: calculateDistance(latitude, longitude, airport.lat, airport.lng)
+          }));
+          
+          const nearby = airportsWithDistance
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 5)
+            .map(airport => airport.name);
+          
+          setNearbyAirports(nearby);
+          setFilteredDepartureAirports(nearby);
+          alert(`Found ${nearby.length} nearby airports (using fallback data)`);
+        }
       },
       (error) => {
         console.error("Geolocation error:", error);
