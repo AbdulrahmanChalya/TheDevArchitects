@@ -23,11 +23,11 @@ import json
 from typing import Optional
 from pathlib import Path
 from .airports_service import get_nearby_airports
-from .payments import router as payments_router
+from .payments import router as payments_router   # <- keep this
 
 api = NinjaAPI()
 
-#load json
+# load json
 DATA_ROOT = Path(__file__).resolve().parents[2]
 def load_json(filename: str):
     p = DATA_ROOT / filename
@@ -38,6 +38,7 @@ def load_json(filename: str):
 @api.get("/", url_name="root")
 def root(request):
     return {"message": "Hello"}
+
 
 @api.get("/search", url_name="search")
 def search(
@@ -52,7 +53,7 @@ def search(
     destinations = load_json("destinations.json")
     flights = load_json("flights.json")
     hotels = load_json("hotels.json")
-    
+
     def match_destination(d):
         if destination:
             text = f"{d.get('name', '')} {d.get('country', '')}".lower()
@@ -64,7 +65,6 @@ def search(
             price = d.get("pricePerNight")
             if price is not None and price > budget:
                 return False
-
 
         return True
 
@@ -98,6 +98,7 @@ def search(
         "results": results,
     }
 
+
 @api.get("/destination/{destination_id}", url_name="destination_detail")
 def destination_detail(request, destination_id: str):
     """
@@ -112,14 +113,17 @@ def destination_detail(request, destination_id: str):
             return d
     raise HttpError(404, "Destination not found")
 
+
 @api.get("/airports/nearby", url_name="nearby_airports")
 def nearby_airports(request, lat: float, lng: float, limit: int = 5):
     """Return nearby airports based on latitude and longitude."""
     return get_nearby_airports(lat, lng, limit)
-    
+
+
+# keep this router registration
 api.add_router("/payments", payments_router)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("api/", api.urls)
+    path("api/", api.urls),
 ]
