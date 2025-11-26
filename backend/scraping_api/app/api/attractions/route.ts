@@ -1,8 +1,8 @@
 // app/api/attractions/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { buildExpediaAttractionsSearchUrl } from "../../lib/expediaAttractions";
-import { AttractionSummary } from "../../types/attraction";
-import expediaAttractionsParser from "../../parsing/expediaAttractionsCustomParser.json";
+import { buildExpediaAttractionsSearchUrl } from "../../../lib/expediaAttractions";
+import { AttractionSummary } from "../../../types/attraction";
+import expediaAttractionsParser from "../../../parsing/expediaAttractionsCustomParser.json";
 
 export async function GET(req: NextRequest) {
   try {

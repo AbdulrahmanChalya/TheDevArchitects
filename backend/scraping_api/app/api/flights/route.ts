@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildExpediaFlightSearchUrl } from "../../lib/expediaFlights";
-import expediaFlightParser from "../../parsing/expediaFlightCustomParser.json";
-import type { FlightSummary } from "../../types/flight";
-import { parseRouteFull } from "../..//lib/flightParsers";
+import { buildExpediaFlightSearchUrl } from "../../../lib/expediaFlights";
+import expediaFlightParser from "../../../parsing/expediaFlightCustomParser.json";
+import type { FlightSummary } from "../../../types/flight";
+import { parseRouteFull } from "../../../lib/flightParsers";
 
 // Optional: cache this route for 1 hour on the Next.js side
 export const revalidate = 60 * 60;
