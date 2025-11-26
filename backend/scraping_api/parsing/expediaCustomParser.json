@@ -1,0 +1,108 @@
+{
+  "hotels": {
+    "_fns": [
+      {
+        "_fn": "xpath",
+        "_args": [
+          "//*[@data-stid='property-listing-results']//*[@data-stid='lodging-card-responsive']",
+          "//*[@data-stid='lodging-card-responsive']"
+        ]
+      }
+    ],
+    "_items": {
+      "name": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//h3[contains(@class,'uitk-heading')]/text()",
+              ".//*[@data-stid='content-hotel-title']/text()"
+            ]
+          }
+        ]
+      },
+      "ratingScore": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//div[contains(@class,'uitk-card-content-section')]//span[contains(@class,'uitk-badge-base-text')]/text()"
+            ]
+          }
+        ]
+      },
+      "ratingText": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//div[contains(@class,'uitk-card-content-section')]//span[contains(@class,'uitk-text') and contains(@class,'uitk-type-medium')]/text()"
+            ]
+          }
+        ]
+      },
+      "pricePerNight": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//span[@data-stid='price-lockup-text']/text()",
+              ".//div[contains(@class,'uitk-type-500')]/text()"
+            ]
+          }
+        ]
+      },
+      "totalPrice": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//*[@data-test-id='price-summary']//div[contains(@class,'uitk-type-end') and contains(text(),'total')]/text()",
+              ".//*[@data-test-id='price-summary-message-line']//div[contains(text(),'total')]/text()",
+              ".//div[contains(@class,'uitk-type-end')][contains(text(),'total')]/text()"
+            ]
+          }
+        ]
+      },
+      "images": {
+        "_fns": [
+          {
+            "_fn": "xpath",
+            "_args": [
+              ".//*[@data-stid='lodging-card-media-section']//img[contains(@class,'uitk-image-media')]/@src",
+              ".//*[@data-stid='lodging-card-media-section']//img[contains(@class,'uitk-image-media')]/@data-src",
+              ".//div[contains(@class,'uitk-gallery-carousel-items')]//img[contains(@class,'uitk-image-media')]/@src",
+              ".//div[contains(@class,'uitk-gallery-carousel-items')]//img[contains(@class,'uitk-image-media')]/@data-src",
+              ".//img[contains(@class,'uitk-image-media')]/@src",
+              ".//img[contains(@class,'uitk-image-media')]/@data-src"
+            ]
+          }
+        ]
+      },
+      "amenities": {
+        "_fns": [
+          {
+            "_fn": "xpath",
+            "_args": [
+              ".//ul[contains(@class,'uitk-typelist') and contains(@class,'uitk-typelist-size-2')]//div[contains(@class,'uitk-text')]/text()",
+              ".//ul[contains(@class,'uitk-typelist')]//li//div[contains(@class,'uitk-text')]/text()"
+            ]
+          }
+        ]
+      },
+      "reviewCount": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//span[contains(@class,'uitk-text') and contains(@class,'uitk-type-200') and contains(., 'review')]/text()"
+            ]
+          },
+          {
+            "_fn": "amount_from_string"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "attractions": {
+    "_fns": [
+      {
+        "_fn": "xpath",
+        "_args": [
+          "//*[@data-stid='activity-card']",
+          "//section[contains(@data-stid,'activity-card')]",
+          "//section[.//h3 and .//text()[contains(., 'Price is')]]"
+        ]
+      }
+    ],
+    "_items": {
+      "name": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//h3[contains(@class,'uitk-heading')]/text()",
+              ".//h3/text()"
+            ]
+          }
+        ]
+      },
+      "ratingScore": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//span[contains(@class,'uitk-badge-base-text')]/text()",
+              ".//span[contains(text(),'out of 10')]/preceding-sibling::text()[1]"
+            ]
+          }
+        ]
+      },
+      "ratingText": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//span[contains(@class,'uitk-text') and contains(@class,'uitk-type-medium')]/text()",
+              ".//span[contains(text(),'Exceptional') or contains(text(),'Wonderful') or contains(text(),'Excellent') or contains(text(),'Very good') or contains(text(),'Good')]/text()"
+            ]
+          }
+        ]
+      },
+      "reviewCount": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//text()[contains(., 'reviews')]"
+            ]
+          },
+          {
+            "_fn": "amount_from_string"
+          }
+        ]
+      },
+      "distance": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//div[contains(text(),'km away')]/text()",
+              ".//text()[contains(.,'km away')]"
+            ]
+          }
+        ]
+      },
+      "duration": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//div[contains(text(),'Duration')]/text()",
+              ".//text()[contains(., 'Duration')]"
+            ]
+          }
+        ]
+      },
+      "priceText": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              "(.//div[contains(text(),'Price is')]/text())[1]",
+              "(.//text()[contains(.,'Price is')])[1]"
+            ]
+          }
+        ]
+      },
+      "price": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              "(.//div[contains(text(),'Price is')]/text())[1]",
+              "(.//text()[contains(.,'Price is')])[1]"
+            ]
+          },
+          {
+            "_fn": "amount_from_string"
+          }
+        ]
+      },
+      "image": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//img[contains(@class,'uitk-image-media')]/@src",
+              ".//img/@src"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

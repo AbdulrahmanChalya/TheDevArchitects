@@ -1,0 +1,66 @@
+{
+  "flights": {
+    "_fns": [
+      {
+        "_fn": "xpath",
+        "_args": [
+          "//*[@data-test-id='listings']//*[@data-test-id='offer-listing']"
+        ]
+      }
+    ],
+    "_items": {
+      "airline": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              "(.//*[@data-stid='flight-information-section']//div[contains(@class,'uitk-text') and contains(@class,'uitk-text-secondary-theme')])[2]/text()"
+            ]
+          }
+        ]
+      },
+      "airlineLogo": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//img[contains(@class,'uitk-mark-landscape-oriented')]/@src",
+              "(.//*[@data-stid='flight-information-section']/ancestor::div[contains(@class,'uitk-layout-grid')][1]//img[contains(@class,'uitk-mark-landscape-oriented')])[1]/@src"
+            ]
+          }
+        ]
+      },
+      "route": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              "(.//*[@data-stid='flight-information-section']//div[contains(@class,'uitk-text') and contains(@class,'uitk-text-secondary-theme')])[1]/text()"
+            ]
+          }
+        ]
+      },
+      "price": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//div[@data-stid='price-display']//span[@aria-hidden='true']/text()"
+            ]
+          },
+          { "_fn": "amount_from_string" }
+        ]
+      },
+      "duration": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [
+              ".//div[@data-stid='tertiary-section']//span[contains(@class,'uitk-type-300')][1]/text()"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
