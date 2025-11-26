@@ -24,6 +24,7 @@ from typing import Optional
 from pathlib import Path
 from .airports_service import get_nearby_airports
 from .payments import router as payments_router   # <- keep this
+from callScrapingApi.api import router as scraping_router
 
 api = NinjaAPI()
 
@@ -122,6 +123,7 @@ def nearby_airports(request, lat: float, lng: float, limit: int = 5):
 
 # keep this router registration
 api.add_router("/payments", payments_router)
+api.add_router("/", scraping_router)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
