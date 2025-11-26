@@ -1,8 +1,8 @@
-import { buildExpediaSearchUrl } from "../../lib/expedia";
+import { buildExpediaSearchUrl } from "../../../lib/expedia";
 import { NextRequest, NextResponse } from "next/server";
 
-import expediaParsingInstructions from "../../parsing/expediaCustomParser.json";
-import { HotelSummary } from "../../types/hotel";
+import expediaParsingInstructions from "../../../parsing/expediaCustomParser.json";
+import { HotelSummary } from "../../../types/hotel";
 
 export async function GET(req: NextRequest) {
   try {
