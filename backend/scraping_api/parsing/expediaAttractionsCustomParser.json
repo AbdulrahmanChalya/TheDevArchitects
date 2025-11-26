@@ -3,11 +3,7 @@
     "_fns": [
       {
         "_fn": "xpath",
-        "_args": [
-          "//*[@data-stid='activity-card']",
-          "//section[contains(@data-stid,'activity-card')]",
-          "//section[.//h3 and .//text()[contains(., 'Price is')]]"
-        ]
+        "_args": ["//*[@data-testid='activity-tile-card']"]
       }
     ],
     "_items": {
@@ -15,9 +11,25 @@
         "_fns": [
           {
             "_fn": "xpath_one",
+            "_args": [".//h3[@data-testid='activity-tile-card--title']/text()"]
+          }
+        ]
+      },
+      "image": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
+            "_args": [".//div[@data-testid='activity-tile-card-img']//img/@src"]
+          }
+        ]
+      },
+      "duration": {
+        "_fns": [
+          {
+            "_fn": "xpath_one",
             "_args": [
-              ".//h3[contains(@class,'uitk-heading')]/text()",
-              ".//h3/text()"
+              ".//div[@data-testid='activity-duration--feature']//span[@aria-hidden='true']/text()",
+              ".//div[@data-testid='activity-duration--feature']//span[@class='is-visually-hidden']/text()"
             ]
           }
         ]
@@ -27,8 +39,7 @@
           {
             "_fn": "xpath_one",
             "_args": [
-              ".//span[contains(@class,'uitk-badge-base-text')]/text()",
-              ".//span[contains(text(),'out of 10')]/preceding-sibling::text()[1]"
+              ".//div[@data-testid='activity-highlight-review']//span[contains(@class,'uitk-badge-base-text')]/text()"
             ]
           }
         ]
@@ -38,8 +49,7 @@
           {
             "_fn": "xpath_one",
             "_args": [
-              ".//span[contains(@class,'uitk-text') and contains(@class,'uitk-type-medium')]/text()",
-              ".//span[contains(text(),'Exceptional') or contains(text(),'Wonderful') or contains(text(),'Excellent') or contains(text(),'Very good') or contains(text(),'Good')]/text()"
+              ".//div[@data-testid='activity-highlight-review']//div[contains(@class,'uitk-text-emphasis-theme')]/text()"
             ]
           }
         ]
@@ -49,33 +59,11 @@
           {
             "_fn": "xpath_one",
             "_args": [
-              ".//text()[contains(., 'reviews')]"
+              ".//div[@data-testid='activity-highlight-review']//div[contains(text(),'review')]/text()"
             ]
           },
           {
             "_fn": "amount_from_string"
-          }
-        ]
-      },
-      "distance": {
-        "_fns": [
-          {
-            "_fn": "xpath_one",
-            "_args": [
-              ".//div[contains(text(),'km away')]/text()",
-              ".//text()[contains(.,'km away')]"
-            ]
-          }
-        ]
-      },
-      "duration": {
-        "_fns": [
-          {
-            "_fn": "xpath_one",
-            "_args": [
-              ".//div[contains(text(),'Duration')]/text()",
-              ".//text()[contains(., 'Duration')]"
-            ]
           }
         ]
       },
@@ -83,10 +71,7 @@
         "_fns": [
           {
             "_fn": "xpath_one",
-            "_args": [
-              "(.//div[contains(text(),'Price is')]/text())[1]",
-              "(.//text()[contains(.,'Price is')])[1]"
-            ]
+            "_args": [".//span[contains(@class,'uitk-price-a11y')]/text()"]
           }
         ]
       },
@@ -94,24 +79,18 @@
         "_fns": [
           {
             "_fn": "xpath_one",
-            "_args": [
-              "(.//div[contains(text(),'Price is')]/text())[1]",
-              "(.//text()[contains(.,'Price is')])[1]"
-            ]
+            "_args": [".//span[contains(@class,'uitk-price-a11y')]/text()"]
           },
           {
             "_fn": "amount_from_string"
           }
         ]
       },
-      "image": {
+      "link": {
         "_fns": [
           {
             "_fn": "xpath_one",
-            "_args": [
-              ".//img[contains(@class,'uitk-image-media')]/@src",
-              ".//img/@src"
-            ]
+            "_args": [".//a[@data-testid='card-link']/@href"]
           }
         ]
       }
