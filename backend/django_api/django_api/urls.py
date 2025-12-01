@@ -25,6 +25,7 @@ from pathlib import Path
 from .airports_service import get_nearby_airports
 from .payments import router as payments_router   # <- keep this
 from callScrapingApi.api import router as scraping_router
+from callScrapingApi.api import call_scraping_service
 
 api = NinjaAPI()
 
@@ -44,60 +45,98 @@ def root(request):
 @api.get("/search", url_name="search")
 def search(
     request,
-    destination: Optional[str] = None,
-    people: Optional[int] = None,
-    budget: Optional[float] = None,
-    startDate: Optional[str] = None,
-    endDate: Optional[str] = None,
-    rooms: Optional[int] = None,
+    originAirport: str="", 
+    destinationAirport: str="", 
+    # departureDate: str="", 
+    # returnDate: str="", 
+    people: int = 1, 
+    city: str= "",
+    startDate: str= "",
+    endDate: str= "",
+    rooms: int=1,
+
 ):
-    destinations = load_json("destinations.json")
-    flights = load_json("flights.json")
-    hotels = load_json("hotels.json")
-
-    def match_destination(d):
-        if destination:
-            text = f"{d.get('name', '')} {d.get('country', '')}".lower()
-            if destination.lower() not in text:
-                return False
-
-        # Budget filter: destination pricePerNight
-        if budget is not None:
-            price = d.get("pricePerNight")
-            if price is not None and price > budget:
-                return False
-
-        return True
-
-    # Filter destinations
-    matched_destinations = [d for d in destinations if match_destination(d)]
-
-    # Build flight list connected to results
-    results = []
-    for d in matched_destinations:
-        dest_id = d["id"]
-
-        related_flights = [f for f in flights if f["destinationId"] == dest_id]
-        related_hotels = [h for h in hotels if h["destinationId"] == dest_id]
-
-        results.append({
-            "destination": d,
-            "flights": related_flights,
-            "hotels": related_hotels
-        })
-
-    return {
-        "filters": {
-            "destination": destination,
-            "people": people,
-            "budget": budget,
-            "startDate": startDate,
-            "endDate": endDate,
-            "rooms": rooms,
-        },
-        "count": len(results),
-        "results": results,
+    attractions_params = {
+        "city": city,
+        "startDate": startDate,
+        "endDate": endDate,
+        "people": people
     }
+
+    hotels_param ={
+        "city": city,
+        "startDate": startDate,
+        "endDate": endDate,
+        "people": people,
+        "rooms": rooms
+    }
+
+    flights_param ={
+        "origin" : originAirport,
+        "destination": destinationAirport,
+        "startDate": startDate,
+        "endDate": endDate,
+        "people": people,
+    }
+    
+    attractionsJson =  call_scraping_service("api/attractions", attractions_params)
+    hotelsJson =  call_scraping_service("api/hotels", hotels_param)
+    flightsJson = call_scraping_service("api/flights", flights_param)
+    
+    return {
+        "attractions": attractionsJson,
+        "hotels": hotelsJson,
+        "flights": flightsJson
+    }
+    
+    #async call 3 scraping, send json reposne to frontend
+    # destinations = load_json("destinations.json")
+    # flights = load_json("flights.json")
+    # hotels = load_json("hotels.json")
+
+    # def match_destination(d):
+    #     if destination:
+    #         text = f"{d.get('name', '')} {d.get('country', '')}".lower()
+    #         if destination.lower() not in text:
+    #             return False
+
+    #     # Budget filter: destination pricePerNight
+    #     if budget is not None:
+    #         price = d.get("pricePerNight")
+    #         if price is not None and price > budget:
+    #             return False
+
+    #     return True
+
+    # # Filter destinations
+    # matched_destinations = [d for d in destinations if match_destination(d)]
+
+    # # Build flight list connected to results
+    # results = []
+    # for d in matched_destinations:
+    #     dest_id = d["id"]
+
+    #     related_flights = [f for f in flights if f["destinationId"] == dest_id]
+    #     related_hotels = [h for h in hotels if h["destinationId"] == dest_id]
+
+    #     results.append({
+    #         "destination": d,
+    #         "flights": related_flights,
+    #         "hotels": related_hotels
+    #     })
+
+    # return {
+    #     "filters": {
+    #         "destination": destination,
+    #         "people": people,
+    #         "budget": budget,
+    #         "startDate": startDate,
+    #         "endDate": endDate,
+    #         "rooms": rooms,
+    #     },
+    #     "count": len(results),
+    #     "results": results,
+    # }
 
 
 @api.get("/destination/{destination_id}", url_name="destination_detail")

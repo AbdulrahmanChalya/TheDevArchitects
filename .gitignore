@@ -222,6 +222,19 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+#eclipse
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+.project
 
 #NextJS gitignore
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.

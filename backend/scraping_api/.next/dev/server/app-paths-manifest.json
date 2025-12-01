@@ -1,3 +1,5 @@
 {
-  "/api/attractions/route": "app/api/attractions/route.js"
+  "/api/attractions/route": "app/api/attractions/route.js",
+  "/api/flights/route": "app/api/flights/route.js",
+  "/api/hotels/route": "app/api/hotels/route.js"
 }

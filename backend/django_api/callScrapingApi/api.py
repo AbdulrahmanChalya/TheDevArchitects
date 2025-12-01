@@ -15,7 +15,7 @@ def call_scraping_service(endpoint: str, params: dict):
     url = f"{SCRAPER_BASE_URL}/{endpoint}"
 
     try:
-        response = requests.get(url, params=params, timeout=60)
+        response = requests.get(url, params=params)
     except Exception as e:
         raise HttpError(502, f"Scraping service unreachable: {e}")
 
@@ -45,19 +45,19 @@ def get_attractions(request,
 # we can implement different option in the future
 @router.get("/flights")
 def get_fights(request, 
-               originAirport: str="", 
-               destinationAirport: str="", 
-               departureDate: str="", 
-               returnDate: str="", 
+               origin: str="", 
+               destination: str="", 
+               startDate: str="", 
+               endDate: str="", 
                people: int = 1, 
-               cabinClass: str="Economy" ):
+                 ):
     params = {
-        "originAirport" : originAirport,
-        "destinationAirport": destinationAirport,
-        "departureDate": departureDate,
-        "returnDate": returnDate,
+        "origin" : origin,
+        "destination": destination,
+        "startDate": startDate,
+        "endDate": endDate,
         "people": people,
-        "cabinClass": cabinClass
+        # "cabinClass": cabinClass
     }
     return call_scraping_service("api/flights", params)
 
