@@ -38,7 +38,7 @@ The backend will be available at:
 
 http://localhost:8000
 
-6. Run the scraping API (in a separate terminal)
+5. Run the scraping API (in a separate terminal)
 Open a new terminal window/tab, then:
 
 ```bash
