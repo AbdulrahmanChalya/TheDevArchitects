@@ -222,3 +222,16 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+#eclipse
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+.project
