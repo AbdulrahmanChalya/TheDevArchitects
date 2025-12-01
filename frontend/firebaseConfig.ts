@@ -2,12 +2,12 @@
 import { initializeApp } from "firebase/app";
 // import { getAnalytics } from "firebase/analytics";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+import { vacationResponseSchema } from "./schema/vacationResponse";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-console.log("API KEY:", import.meta.env.VITE_API_KEY);
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_API_KEY,
@@ -19,11 +19,11 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_MEASUREMENT_ID,
 };
 
-if (!firebaseConfig.apiKey) {
-  throw new Error(
-    "VITE_API_KEY is missing. Check your .env file in the frontend project root."
-  );
-}
+// if (!firebaseConfig.apiKey) {
+//   throw new Error(
+//     "VITE_API_KEY is missing. Check your .env file in the frontend project root."
+//   );
+// }
 
 // Initialize Firebase
 const firebaseApp = initializeApp(firebaseConfig);
@@ -33,6 +33,9 @@ const firebaseApp = initializeApp(firebaseConfig);
 const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
 
 // Create a `GenerativeModel` instance with a model that supports your use case
-export const model = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
+export const model = getGenerativeModel(ai, { model: "gemini-2.5-flash", generationConfig: {
+    responseMimeType: "application/json",
+    responseSchema: vacationResponseSchema,
+  },});
 
 // Wrap in an async function so you can use await
