@@ -33,11 +33,10 @@ pip install -r requirements.txt
 ```bash
 Copy code
 python manage.py runserver 8000
-```
+
 The backend will be available at:
-
 http://localhost:8000
-
+```
 5. Run the scraping API (in a separate terminal)
 Open a new terminal window/tab, then:
 
