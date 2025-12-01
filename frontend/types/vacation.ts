@@ -1,4 +1,4 @@
-export interface VacationPackage {
+export type VacationPackage ={
   vacationId: string;
   destinationCity: string;
   totalCost: number;

@@ -84,9 +84,9 @@ const result = await model.generateContent(
       // in result.response
       // Adjust this depending on the exact SDK shape; some builds use result.response.candidates[0].content...
       // Here we assume result.response already matches the schema:
-      const data = (result as any).response as {
-        vacationPackages?: VacationPackage[];
-      };
+      // result.response.text() will be a JSON string that matches your schema.
+      const jsonText = result.response.text();
+      const data = JSON.parse(jsonText) as { vacationPackages?: VacationPackage[] };
 
       console.log(data);
 
