@@ -6,7 +6,7 @@ This backend is a Django API used by the Getaway Hub frontend and the scraping A
 
 ```bash
 git clone https://github.com/AbdulrahmanChalya/TheDevArchitects.git
-cd TheDevArchitects
+cd TheDevArchitect
 ```
 
 2. Create and activate a virtual environment
@@ -29,6 +29,7 @@ pip install -r requirements.txt
 4. Run the Django backend
    
 ```bash
+cd django_api
 python manage.py runserver 8000
 
 The backend will be available at:
@@ -38,7 +39,7 @@ http://localhost:8000
 Open a new terminal window/tab, then:
 
 ```bash
-cd TheDevArchitects/scraping_api
+cd TheDevArchitects/backend/craping_api
 npm install      # if you haven’t installed dependencies yet
 npm run dev
 ```
