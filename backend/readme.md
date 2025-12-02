@@ -43,3 +43,18 @@ cd TheDevArchitects/backend/craping_api
 npm install      # if you haven’t installed dependencies yet
 npm run dev
 ```
+
+# Getaway Hub Backend – Local Setup
+
+This backend includes the Django API and the scraping API service used by the Getaway Hub frontend.
+
+---
+
+## Recommended Setup for one Command
+
+From the project root:
+
+```bash
+./run_backend.sh --with-scraper
+
+

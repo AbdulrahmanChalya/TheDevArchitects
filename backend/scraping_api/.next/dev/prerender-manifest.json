@@ -4,8 +4,14 @@
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
+<<<<<<< HEAD
     "previewModeId": "bfa088a34af51245f9512b79f0158894",
     "previewModeSigningKey": "93449d22b6646aa2d7b523cd472b8318f435bfb1ca7a6460602417df3dc38497",
     "previewModeEncryptionKey": "e65115e8e1b8c5492fbfa3bd1d392374e02adec0218172f2597683bc3b0f9c68"
+=======
+    "previewModeId": "d3679d956b5924e93e590e121f4361a5",
+    "previewModeSigningKey": "6b5a407e9222a0cc7ebbb3dde2e8b5627e4b4af1121323b38b7fe63287b26a77",
+    "previewModeEncryptionKey": "2d9e92190121aa77760fe1a064599f5fae0c4bcd4aef36c15e7c7baeb78e12d9"
+>>>>>>> a7fbe66 (Updated backend setup docs and run script fixes)
   }
 }
