@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { model } from "../../../firebaseConfig";
-import { VacationPackage} from "../../../types/vacation";
+import { VacationPackage } from "../../../types/vacation";
 const DummyPage = () => {
-const [response, setResponse] = useState("");
+  const [response, setResponse] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [numPeople, setNumPeople] = useState(2);
@@ -19,7 +19,7 @@ const [response, setResponse] = useState("");
     endDate: "2026-01-02",
     rooms: "1",
   });
- 
+
   const fetchData = async () => {
     try {
       const response = await fetch(
@@ -40,9 +40,9 @@ const [response, setResponse] = useState("");
     }
   };
 
-async function handleGenerate() {
-     try {
-    const prompt = `
+  async function handleGenerate() {
+    try {
+      const prompt = `
 You are a vacation package planner. 
 User details:
 •⁠  ⁠Number of people: ${2}
@@ -76,9 +76,7 @@ JSON:
 ${JSON.stringify(response)}
 `;
 
-const result = await model.generateContent(
-        prompt, 
-      );
+      const result = await model.generateContent(prompt);
 
       // When using responseSchema, Firebase AI Logic returns structured data
       // in result.response
@@ -86,7 +84,9 @@ const result = await model.generateContent(
       // Here we assume result.response already matches the schema:
       // result.response.text() will be a JSON string that matches your schema.
       const jsonText = result.response.text();
-      const data = JSON.parse(jsonText) as { vacationPackages?: VacationPackage[] };
+      const data = JSON.parse(jsonText) as {
+        vacationPackages?: VacationPackage[];
+      };
 
       console.log(data);
 
@@ -97,21 +97,32 @@ const result = await model.generateContent(
       setPackages(data.vacationPackages);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Something went wrong while generating packages.");
+      setError(
+        err.message || "Something went wrong while generating packages."
+      );
     } finally {
       setLoading(false);
     }
   }
   return (
-    <div>
-      DummyPage
-      <button onClick={fetchData}>Click me</button>
-      <br></br>
-      <button className="border-black" onClick={handleGenerate}>
-        AI Recommendation
-      </button>
+    <div className="p-5">
+      <div className="p-5 text-2xl">Test Page</div>
+      <div className="flex justify-evenly items-center">
+        <button
+          className="rounded-2xl border-2 px-4 py-2 text-white bg-violet-500 hover:bg-violet-600 focus:outline-2 focus:outline-offset-2 focus:outline-violet-500 active:bg-violet-700"
+          onClick={fetchData}
+        >
+          Click me
+        </button>
+        <br />
+        <button
+          className="rounded-2xl border-2 px-4 py-2 text-white bg-sky-500 hover:bg-sky-700"
+          onClick={handleGenerate}
+        >
+          AI Recommendation
+        </button>
+      </div>
     </div>
-    
   );
 };
 
