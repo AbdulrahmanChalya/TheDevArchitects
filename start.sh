@@ -36,6 +36,7 @@ echo ""
 echo -e "${GREEN}✓ Both servers are starting...${NC}"
 echo -e "${GREEN}✓ Frontend: http://localhost:3000${NC}"
 echo -e "${GREEN}✓ Backend: http://127.0.0.1:8000${NC}"
+echo -e "${GREEN}✓ Scraping: Secret lol"
 echo ""
 echo -e "Press ${BLUE}Ctrl+C${NC} to stop both servers"
 
