@@ -22,6 +22,11 @@ echo -e "${BLUE}Starting Django backend on http://127.0.0.1:8000${NC}"
 cd backend/django_api && python3 manage.py runserver &
 BACKEND_PID=$!
 
+# Start Scraping API
+echo -e "${BLUE}Starting ScrapingAPI"
+cd backend/scraping_api && npm run dev &
+SCRAPING_PID=$!
+
 # Start frontend
 echo -e "${BLUE}Starting frontend on http://localhost:3000${NC}"
 cd frontend && npm run dev &
