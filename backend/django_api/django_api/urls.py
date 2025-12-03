@@ -26,7 +26,7 @@ from .airports_service import get_nearby_airports
 from .payments import router as payments_router   # <- keep this
 from callScrapingApi.api import router as scraping_router
 from callScrapingApi.api import call_scraping_service
-
+import time #just have this import here in the meantime
 api = NinjaAPI()
 
 # load json
@@ -78,15 +78,16 @@ def search(
         "endDate": endDate,
         "people": people,
     }
-    
+    #Could add sleep if oxylab keep bitching, final solution.
+    #asyncio or thread
     attractionsJson =  call_scraping_service("api/attractions", attractions_params)
-    hotelsJson =  call_scraping_service("api/hotels", hotels_param)
     flightsJson = call_scraping_service("api/flights", flights_param)
+    hotelsJson =  call_scraping_service("api/hotels", hotels_param)
     
     return {
         "attractions": attractionsJson,
-        "hotels": hotelsJson,
-        "flights": flightsJson
+        "flights": flightsJson,
+        "hotels": hotelsJson
     }
     
     #async call 3 scraping, send json reposne to frontend
