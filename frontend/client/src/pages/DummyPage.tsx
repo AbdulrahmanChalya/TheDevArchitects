@@ -15,8 +15,8 @@ const DummyPage = () => {
     destinationAirport: "CDG",
     people: "2",
     city: "Paris (and vicinity), France",
-    startDate: "2025-12-20",
-    endDate: "2026-01-02",
+    startDate: "2025-02-20",
+    endDate: "2026-03-10",
     rooms: "1",
   });
 
@@ -47,7 +47,6 @@ You are a vacation package planner.
 User details:
 •⁠  ⁠Number of people: ${2}
 •⁠  ⁠Total budget in USD: ${6000}
-•⁠  ⁠Desired number of nights from 2025-12-20 to 2026-01-02,
 
 You are given:
 •⁠  ⁠A list of hotels (with city, price per night, maxGuests)

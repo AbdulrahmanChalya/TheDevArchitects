@@ -23,7 +23,7 @@ cd backend/django_api && python3 manage.py runserver &
 BACKEND_PID=$!
 
 # Start Scraping API
-echo -e "${BLUE}Starting ScrapingAPI"
+echo -e "${BLUE}Starting ScrapingAPI on shhhh"
 cd backend/scraping_api && npm run dev &
 SCRAPING_PID=$!
 
@@ -38,7 +38,7 @@ echo -e "${GREEN}✓ Frontend: http://localhost:3000${NC}"
 echo -e "${GREEN}✓ Backend: http://127.0.0.1:8000${NC}"
 echo -e "${GREEN}✓ Scraping: Secret lol"
 echo ""
-echo -e "Press ${BLUE}Ctrl+C${NC} to stop both servers"
+echo -e "Press ${BLUE}Ctrl+C${NC} to stop three servers"
 
 # Wait for both processes
 wait
