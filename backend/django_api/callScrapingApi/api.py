@@ -3,29 +3,31 @@ from ninja import Router
 from django.conf import settings
 import os
 from ninja.errors import HttpError
+import httpx
 
 SCRAPER_BASE_URL = os.getenv("SCRAPER_BASE_URL", "http://localhost:5001")
 
 router = Router()
 
 
-def call_scraping_service(endpoint: str, params: dict):
+async def call_scraping_service(endpoint: str, params: dict):
     # prevent double slashes
     endpoint = endpoint.lstrip("/")
     url = f"{SCRAPER_BASE_URL}/{endpoint}"
 
-    try:
-        response = requests.get(url, params=params)
-    except Exception as e:
-        raise HttpError(502, f"Scraping service unreachable: {e}")
+    async with httpx.AsyncClient(timeout=120.0)as client:
+        try:
+            response = await client.get(url, params=params)
+        except httpx.RequestError as e:
+            raise HttpError(502, f"Scraping service unreachable: {e}")
 
-    if not response.ok:
-        raise HttpError(response.status_code, response.text)
+        if response.is_error:
+            raise HttpError(response.status_code, response.text)
 
-    try:
-        return response.json()
-    except Exception:
-        raise HttpError(502, "Scraping backend returned invalid JSON")
+        try:
+            return response.json()
+        except Exception:
+            raise HttpError(502, "Scraping backend returned invalid JSON")
 
 @router.get("/attractions")
 def get_attractions(request, 
