@@ -19,7 +19,7 @@ async def call_scraping_service(endpoint: str, params: dict):
         try:
             response = await client.get(url, params=params)
         except httpx.RequestError as e:
-            raise HttpError(502, f"Scraping service unreachable: {e}")
+            raise HttpError(502, f"Timeout due to taking 120 seconds\nScraping service unreachable: {e}")
 
         if response.is_error:
             raise HttpError(response.status_code, response.text)
