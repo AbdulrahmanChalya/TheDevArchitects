@@ -24,13 +24,16 @@ python -m venv .venv
 ```bash
 cd backend
 pip install -r requirements.txt
+npm install
+(or pnpm install)
 ```
 
-4. Run the Django backend
+4. Run the Nestjs backend
    
 ```bash
-cd django_api
-python manage.py runserver 8000
+cd nest-js-backend
+npm start:dev
+(or pnpm start:dev)
 
 The backend will be available at:
 http://localhost:8000
