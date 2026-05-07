@@ -274,3 +274,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Next.js build output
+.next/
+backend/scraping_api/.next/
