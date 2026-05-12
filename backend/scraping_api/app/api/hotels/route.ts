@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
     const content = data.results?.[0]?.content;
     const hotelsRaw = content?.hotels ?? [];
 
-    const hotels: HotelSummary[] = hotelsRaw.map((h: any, index: number) => ({
+    const hotels: HotelSummary[] = hotelsRaw.slice(0,10).map((h: any, index: number) => ({
       id: `hotel-${index + 1}`,
       name: h.name,
       ratingText: h.ratingText || undefined,

@@ -14,6 +14,13 @@ export class ScrapingService {
         //this is insane to look at but basically this will remove any / before api/data
         const url = new URL(endpoint.replace(/^\/+/, ''), `${this.scraperBaseUrl}/`); 
 
+
+        // Skip query params with null, undefined, or empty string values to avoid
+        // sending garbage to the scraper (e.g. "?city=&people=2" becomes "?people=2")
+        //
+        // Example:
+        //   params = { city: "Paris", startDate: "", people: 2, rooms: null }
+        //   → only appends city=Paris and people=2
         for (const key in params) {
             const value = params[key];
 
