@@ -22,6 +22,69 @@ A trip planning application for booking flights, hotels, and creating travel iti
 4. **Open your browser:**
    - Go to `http://localhost:3000`
 
+## Running With Docker
+
+This project can also be run with Docker Compose from the project root.
+
+### Prerequisites
+
+- Docker Desktop installed and running
+
+### Start the App
+
+```bash
+docker compose up --build
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+Services:
+
+```text
+Frontend: http://localhost:3000
+API:      http://localhost:8000/api
+Scraper:  http://localhost:5001
+```
+
+### Stop the App
+
+Press `Ctrl + C` in the terminal running Docker Compose, then run:
+
+```bash
+docker compose down
+```
+
+### Useful Commands
+
+Run in the background:
+
+```bash
+docker compose up -d --build
+```
+
+View logs:
+
+```bash
+docker compose logs -f
+```
+
+Rebuild from scratch:
+
+```bash
+docker compose build --no-cache
+docker compose up
+```
+
+Check running containers:
+
+```bash
+docker compose ps
+```
+
 ## Features
 
 - Search destinations with autocomplete
@@ -40,4 +103,3 @@ A trip planning application for booking flights, hotels, and creating travel iti
 - Vite
 - Django + Python backend
 - Stripe Payments
-

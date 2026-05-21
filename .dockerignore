@@ -1,0 +1,42 @@
+# Dependencies
+**/node_modules
+
+# Python virtual environments
+**/.venv
+**/venv
+**/env
+**/ENV
+
+# Build outputs
+**/dist
+**/build
+**/.next
+**/coverage
+**/.nyc_output
+
+# Python cache/test artifacts
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+
+# Environment/secrets
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Logs
+**/*.log
+**/logs
+
+# OS/editor noise
+**/.DS_Store
+**/.idea
+**/.vscode
+
+# Docker/local artifacts
+docker-compose.override.yml
+*.tar
+*.tar.gz
