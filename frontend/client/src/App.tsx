@@ -8,7 +8,7 @@ import SearchResults from "@/pages/SearchResults";
 import DestinationDetails from "@/pages/DestinationDetails";
 import BookHotel from "@/pages/BookHotel";
 import BookFlight from "@/pages/BookFlight";
-// import Payment from "@/pages/Payment";
+import Payment from "@/pages/Payment";
 import BookingSuccess from "@/pages/BookingSuccess";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
@@ -24,6 +24,7 @@ function Router() {
       <Route path="/destination/:destination" component={DestinationDetails} />
       <Route path="/book-hotel" component={BookHotel} />
       <Route path="/book-flight" component={BookFlight} />
+      <Route path="/payment" component={Payment} />
       {/* <Route path="/payment" component={PaymentPage} /> */}
       <Route path="/dummy" component={DummyPage} />
       <Route path="/booking-success" component={BookingSuccess} />
