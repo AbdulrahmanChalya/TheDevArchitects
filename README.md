@@ -12,7 +12,6 @@ A trip planning application for booking flights, hotels, and creating travel iti
 2. **Install dependencies:**
    ```bash
    npm install
-   npm install stripe dotenv
    ```
 
 3. **Start the development server:**
