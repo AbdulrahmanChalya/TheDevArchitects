@@ -277,3 +277,6 @@ next-env.d.ts
 # Next.js build output
 .next/
 backend/scraping_api/.next/
+
+# Project documentation (kept local, not tracked)
+docs/
