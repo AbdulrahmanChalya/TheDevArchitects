@@ -14,6 +14,7 @@ import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import NotFound from "@/pages/not-found";
 import DummyPage from "./pages/DummyPage";
+import AIAssistantChat from "@/components/AIAssistantChat";
 // import PaymentPage from "./pages/PaymentPage";
 
 function Router() {
@@ -41,6 +42,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
+        <AIAssistantChat />
       </TooltipProvider>
     </QueryClientProvider>
   );
