@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { useLocation } from "wouter";
 
 interface SearchBarProps {
@@ -116,6 +116,13 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Safely parse a date string from the URL; return undefined for empty or invalid values.
+  const parseUrlDate = (value: string | null): Date | undefined => {
+    if (!value) return undefined;
+    const parsed = new Date(value);
+    return isValid(parsed) ? parsed : undefined;
+  };
+
   // Restore search data from URL parameters on component mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -136,8 +143,8 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
         arrivalAirport: arrivalAirport || "",
         people: people || "",
         budget: budget || "",
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
+        startDate: parseUrlDate(startDate),
+        endDate: parseUrlDate(endDate),
         rooms: rooms || ""
       });
 
@@ -279,10 +286,12 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   };
 
   const getDateRangeText = () => {
-    if (searchData.startDate && searchData.endDate) {
-      return `${format(searchData.startDate, "MMM dd, yyyy")} - ${format(searchData.endDate, "MMM dd, yyyy")}`;
-    } else if (searchData.startDate) {
-      return `${format(searchData.startDate, "MMM dd, yyyy")} - End date`;
+    const hasStart = searchData.startDate && isValid(searchData.startDate);
+    const hasEnd = searchData.endDate && isValid(searchData.endDate);
+    if (hasStart && hasEnd) {
+      return `${format(searchData.startDate!, "MMM dd, yyyy")} - ${format(searchData.endDate!, "MMM dd, yyyy")}`;
+    } else if (hasStart) {
+      return `${format(searchData.startDate!, "MMM dd, yyyy")} - End date`;
     }
     return "Select dates";
   };
@@ -341,8 +350,8 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
       arrivalAirport: searchData.arrivalAirport,
       people: searchData.people,
       budget: searchData.budget,
-      startDate: searchData.startDate ? format(searchData.startDate, 'yyyy-MM-dd') : '',
-      endDate: searchData.endDate ? format(searchData.endDate, 'yyyy-MM-dd') : '',
+      startDate: searchData.startDate && isValid(searchData.startDate) ? format(searchData.startDate, 'yyyy-MM-dd') : '',
+      endDate: searchData.endDate && isValid(searchData.endDate) ? format(searchData.endDate, 'yyyy-MM-dd') : '',
       rooms: searchData.rooms
     });
     setLocation(`/search?${params.toString()}`);

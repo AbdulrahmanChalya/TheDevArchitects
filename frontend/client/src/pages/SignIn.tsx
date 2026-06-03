@@ -27,9 +27,10 @@ export default function SignIn() {
       title: "Sign In Successful",
       description: "Welcome back to GetawayHub!",
     });
-    
+
+    const redirect = new URLSearchParams(window.location.search).get("redirect");
     setTimeout(() => {
-      setLocation("/");
+      setLocation(redirect || "/");
     }, 1000);
   };
 
@@ -61,7 +62,6 @@ export default function SignIn() {
                   className="pl-10"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
                   data-testid="input-email"
                 />
               </div>
@@ -78,7 +78,6 @@ export default function SignIn() {
                   className="pl-10 pr-10"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
                   data-testid="input-password"
                 />
                 <button
@@ -174,7 +173,8 @@ export default function SignIn() {
                 href="/signup"
                 onClick={(e) => {
                   e.preventDefault();
-                  setLocation("/signup");
+                  const redirect = new URLSearchParams(window.location.search).get("redirect");
+                  setLocation(redirect ? `/signup?redirect=${encodeURIComponent(redirect)}` : "/signup");
                 }}
                 className="text-primary font-medium hover:underline"
                 data-testid="link-signup"

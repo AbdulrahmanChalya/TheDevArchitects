@@ -50,8 +50,9 @@ export default function SignUp() {
       description: "Welcome to GetawayHub! Redirecting to sign in...",
     });
     
+    const redirect = new URLSearchParams(window.location.search).get("redirect");
     setTimeout(() => {
-      setLocation("/signin");
+      setLocation(redirect ? `/signin?redirect=${encodeURIComponent(redirect)}` : "/signin");
     }, 1500);
   };
 
