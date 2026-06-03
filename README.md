@@ -2,6 +2,8 @@
 
 A trip planning application for booking flights, hotels, and creating travel itineraries.
 
+**Full project documentation:** [docs/PROJECT.md](docs/PROJECT.md) — architecture, APIs, frontend pages, data models, workflows, and known gaps.
+
 ## How to Run the App
 
 1. **Navigate to frontend directory:**

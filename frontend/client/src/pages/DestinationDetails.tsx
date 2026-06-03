@@ -22,7 +22,7 @@ export default function DestinationDetails() {
 
   const handleBookNow = () => {
     const params = new URLSearchParams(searchData);
-    setLocation(`/book-hotel?${params.toString()}`);
+    setLocation(`/search?${params.toString()}`);
   };
 
   return (
@@ -133,7 +133,7 @@ export default function DestinationDetails() {
               size="lg" 
               className="flex-1 bg-blue-600 hover:bg-blue-700"
             >
-              Start Booking Process
+              View Trip Packages
             </Button>
             <Button 
               variant="outline" 
