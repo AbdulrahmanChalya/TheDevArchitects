@@ -14,8 +14,8 @@ export default function DestinationDetails() {
   
   const searchData = {
     destination: urlParams.get('destination') || destination,
-    startDate: urlParams.get('startDate'),
-    endDate: urlParams.get('endDate'),
+    startDate: urlParams.get('startDate') || '',
+    endDate: urlParams.get('endDate') || '',
     people: urlParams.get('people') || '2',
     rooms: urlParams.get('rooms') || '1'
   };
