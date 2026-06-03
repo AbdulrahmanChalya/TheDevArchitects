@@ -6,15 +6,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/Home";
 import SearchResults from "@/pages/SearchResults";
 import DestinationDetails from "@/pages/DestinationDetails";
-import BookHotel from "@/pages/BookHotel";
-import BookFlight from "@/pages/BookFlight";
-import Payment from "@/pages/Payment";
+import TripPackageDetails from "@/pages/TripPackageDetails";
+import PaymentPage from "@/pages/PaymentPage";
 import BookingSuccess from "@/pages/BookingSuccess";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import NotFound from "@/pages/not-found";
 import DummyPage from "./pages/DummyPage";
-// import PaymentPage from "./pages/PaymentPage";
 
 function Router() {
   return (
@@ -22,10 +20,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/search" component={SearchResults} />
       <Route path="/destination/:destination" component={DestinationDetails} />
-      <Route path="/book-hotel" component={BookHotel} />
-      <Route path="/book-flight" component={BookFlight} />
-      <Route path="/payment" component={Payment} />
-      {/* <Route path="/payment" component={PaymentPage} /> */}
+      <Route path="/package/:id" component={TripPackageDetails} />
+      <Route path="/payment" component={PaymentPage} />
       <Route path="/dummy" component={DummyPage} />
       <Route path="/booking-success" component={BookingSuccess} />
       <Route path="/signin" component={SignIn} />

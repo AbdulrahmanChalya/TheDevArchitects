@@ -14,15 +14,15 @@ export default function DestinationDetails() {
   
   const searchData = {
     destination: urlParams.get('destination') || destination,
-    startDate: urlParams.get('startDate'),
-    endDate: urlParams.get('endDate'),
+    startDate: urlParams.get('startDate') || '',
+    endDate: urlParams.get('endDate') || '',
     people: urlParams.get('people') || '2',
     rooms: urlParams.get('rooms') || '1'
   };
 
   const handleBookNow = () => {
     const params = new URLSearchParams(searchData);
-    setLocation(`/book-hotel?${params.toString()}`);
+    setLocation(`/search?${params.toString()}`);
   };
 
   return (
@@ -133,7 +133,7 @@ export default function DestinationDetails() {
               size="lg" 
               className="flex-1 bg-blue-600 hover:bg-blue-700"
             >
-              Start Booking Process
+              View Trip Packages
             </Button>
             <Button 
               variant="outline" 
