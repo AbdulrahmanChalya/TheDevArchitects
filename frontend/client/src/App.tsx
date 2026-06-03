@@ -13,7 +13,6 @@ import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import NotFound from "@/pages/not-found";
 import DummyPage from "./pages/DummyPage";
-// import PaymentPage from "./pages/PaymentPage";
 
 function Router() {
   return (
