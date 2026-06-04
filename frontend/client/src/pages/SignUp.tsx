@@ -1,3 +1,8 @@
+// SignUp (/signup) - mock registration.
+//
+// Validates password match and terms checkbox (stricter than SignIn).
+// On success, redirects to /signin (preserving ?redirect if present).
+// No account is persisted.
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Plane, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
@@ -21,9 +26,11 @@ export default function SignUp() {
     agreeToTerms: false
   });
 
+  // Validate form, mock create account, then send user to /signin (keeps ?redirect).
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Client-side checks only: passwords must match and terms must be agreed.
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Passwords don't match",
@@ -180,6 +187,7 @@ export default function SignUp() {
               </Label>
             </div>
 
+            {/* Mock sign-up — validates form, then sends user to sign-in */}
             <Button type="submit" className="w-full" size="lg" data-testid="button-signup">
               Create Account
             </Button>

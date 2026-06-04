@@ -1,3 +1,4 @@
+// Example wrapper — single DestinationCard with hardcoded Paris props.
 import DestinationCard from '../DestinationCard';
 
 export default function DestinationCardExample() {

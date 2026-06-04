@@ -1,19 +1,22 @@
+// Displays one destination from destinations.json. Click navigates to
+// /destination/:id (DestinationDetails), not directly to package search.
+// Renders at most three activity tags from the activities array.
 import { Star, MapPin, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 
 interface DestinationCardProps {
-  id: string;
+  id: string; // used in route /destination/:id
   name: string;
   country: string;
   description: string;
-  image: string;
+  image: string; // filename; loaded from /attached_assets/images/
   rating: number;
   reviewCount: number;
   pricePerNight: number;
   activities: string[];
-  flightTime?: string;
+  flightTime?: string; // from flightTimeFromNYC in JSON; omitted if undefined
 }
 
 export default function DestinationCard({
@@ -26,17 +29,18 @@ export default function DestinationCard({
   reviewCount,
   pricePerNight,
   activities,
-  flightTime
+  flightTime,
 }: DestinationCardProps) {
   const [, setLocation] = useLocation();
 
+  // Whole card click → /destination/:id
   const handleClick = () => {
     console.log(`Destination ${id} clicked`);
     setLocation(`/destination/${id}`);
   };
 
   return (
-    <Card 
+    <Card
       className="overflow-hidden hover-elevate active-elevate-2 transition-all duration-300 cursor-pointer group"
       onClick={handleClick}
       data-testid={`card-destination-${id}`}

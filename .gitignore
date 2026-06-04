@@ -280,3 +280,6 @@ backend/scraping_api/.next/
 
 # Project documentation (kept local, not tracked)
 docs/
+
+# Local dev launcher (machine-specific)
+start.sh

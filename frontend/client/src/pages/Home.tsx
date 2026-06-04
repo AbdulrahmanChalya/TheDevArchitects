@@ -1,12 +1,17 @@
+// Home (/) — landing page.
+// Loads destinations + recommendations from /backend/*.json.
+// SearchBar here starts the flow by sending the user to /search.
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
 import DestinationCard from "@/components/DestinationCard";
 import RecommendationCard from "@/components/RecommendationCard";
 import Footer from "@/components/Footer";
+// Bundled at build time (not from /backend JSON).
 import heroImage from "@assets/images/Hero_tropical_beach_scene_e5fdeadc.png";
 import { Lightbulb } from "lucide-react";
 
+// Shape of one item in /backend/destinations.json.
 interface Destination {
   id: string;
   name: string;
@@ -20,12 +25,14 @@ interface Destination {
   flightTimeFromNYC: string;
 }
 
+// Nested inside each recommendation in recommendations.json.
 interface Activity {
   name: string;
   description: string;
   icon: string;
 }
 
+// Shape of one item in /backend/recommendations.json.
 interface Recommendation {
   id: string;
   destination: string;
@@ -37,32 +44,32 @@ interface Recommendation {
 }
 
 export default function Home() {
-  // TODO: remove mock functionality - Replace with actual API call
+  // Load destination cards (static JSON, not a real /api route).
   const { data: destinations, isLoading } = useQuery<Destination[]>({
     queryKey: ["/api/destinations"],
     queryFn: async () => {
       const response = await fetch("/backend/destinations.json");
       return response.json();
-    }
+    },
   });
 
+  // Load inspiration cards (read-only, no booking link).
   const { data: recommendations, isLoading: recommendationsLoading } = useQuery<Recommendation[]>({
     queryKey: ["/api/recommendations"],
     queryFn: async () => {
       const response = await fetch("/backend/recommendations.json");
       return response.json();
-    }
+    },
   });
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
-      {/* Hero Section */}
-      <section 
+
+      <section
         className="relative min-h-[80vh] flex items-center justify-center bg-cover bg-center"
         style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url(${heroImage})`
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url(${heroImage})`,
         }}
       >
         <div className="container mx-auto px-4 md:px-6 text-center z-10">
@@ -72,14 +79,13 @@ export default function Home() {
           <p className="text-lg md:text-xl text-white/95 mb-8 max-w-2xl mx-auto drop-shadow-md">
             Plan your dream vacation with real-time flights, hotels, and personalized itineraries
           </p>
-          
+
           <div className="max-w-5xl mx-auto">
             <SearchBar variant="hero" />
           </div>
         </div>
       </section>
 
-      {/* Popular Destinations Section */}
       <section className="py-16 md:py-20 bg-background">
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-12">
@@ -119,7 +125,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Travel Recommendations Section */}
       <section className="py-16 md:py-20 bg-muted/30">
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-12">

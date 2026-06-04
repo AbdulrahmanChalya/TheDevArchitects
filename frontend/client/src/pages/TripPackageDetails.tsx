@@ -1,3 +1,11 @@
+// TripPackageDetails (/package/:id) - full bundle breakdown before checkout.
+//
+// :id is the destinationId from tripPackages (same as package id).
+// Pricing uses cheapest hotel/flight unless you later add selectors.
+// Attractions show as "Included" because JSON has no attraction prices.
+//
+// Reserve flow: build payment query → /signin?redirect=encoded(/payment?...)
+// so the user must pass through mock sign-in before PaymentPage.
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import Header from "@/components/Header";
@@ -29,6 +37,7 @@ import {
 const FALLBACK_IMAGE = "/attached_assets/images/Hero_tropical_beach_scene_e5fdeadc.png";
 
 export default function TripPackageDetails() {
+  // :id in the URL is the package / destination id from tripPackages.
   const [location, setLocation] = useLocation();
   const [, params] = useRoute("/package/:id");
   const packageId = params?.id ?? "";
@@ -47,11 +56,14 @@ export default function TripPackageDetails() {
     },
   });
 
+  // Go back to search results with the same query string.
   const handleCancel = () => {
     const query = searchParams.toString();
     setLocation(query ? `/search?${query}` : "/search");
   };
 
+  // Reserve: package up the order details and send the user to sign in first,
+  // then on to the payment page (via the redirect query param).
   const handleReserve = () => {
     if (!pkg) return;
     const pricing = computePackagePricing(pkg, { nights, passengers });
@@ -96,6 +108,7 @@ export default function TripPackageDetails() {
               <p className="text-lg text-muted-foreground mb-6">
                 We couldn't find that trip package.
               </p>
+              {/* Unknown package id */}
               <Button onClick={handleCancel}>Back to Results</Button>
             </CardContent>
           </Card>
@@ -116,7 +129,6 @@ export default function TripPackageDetails() {
       <main className="flex-1 bg-muted/10">
         <div className="container mx-auto px-4 md:px-6 py-8">
           <div className="max-w-5xl mx-auto">
-            {/* Hero / Title */}
             <div className="relative h-56 md:h-72 rounded-2xl overflow-hidden mb-8 shadow-lg">
               <img
                 src={`/attached_assets/images/${pkg.image}`}
@@ -158,9 +170,7 @@ export default function TripPackageDetails() {
             <p className="text-muted-foreground mb-8">{pkg.description}</p>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Bundle breakdown */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Hotel */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="flex items-center gap-2 text-xl">
@@ -198,7 +208,6 @@ export default function TripPackageDetails() {
                   </CardContent>
                 </Card>
 
-                {/* Flight */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="flex items-center gap-2 text-xl">
@@ -235,7 +244,6 @@ export default function TripPackageDetails() {
                   </CardContent>
                 </Card>
 
-                {/* Attractions */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="flex items-center gap-2 text-xl">
@@ -264,7 +272,6 @@ export default function TripPackageDetails() {
                 </Card>
               </div>
 
-              {/* Price summary + actions */}
               <div className="lg:col-span-1">
                 <Card className="sticky top-16">
                   <CardHeader>
@@ -300,6 +307,7 @@ export default function TripPackageDetails() {
 
                     <Separator />
 
+                    {/* Sign in first, then /payment with order in URL */}
                     <Button
                       size="lg"
                       className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
@@ -308,6 +316,7 @@ export default function TripPackageDetails() {
                     >
                       Reserve
                     </Button>
+                    {/* Back to /search with same criteria */}
                     <Button
                       variant="outline"
                       size="lg"

@@ -1,3 +1,11 @@
+// DestinationDetails (/destination/:destination)
+//
+// Route param :destination is the destination id (e.g. "paris-france").
+// Optional query params (destination, dates, people, rooms) come from
+// SearchBar or a prior navigation — shown in "Your Trip Summary".
+//
+// Content is mostly placeholder copy (rating, attractions are not loaded
+// from JSON). "View Trip Packages" sends the user to /search with params.
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +15,7 @@ import Footer from "@/components/Footer";
 
 export default function DestinationDetails() {
   const [, setLocation] = useLocation();
+  // :destination from the URL path; query string may override display fields.
   const [match, params] = useRoute("/destination/:destination");
   
   const destination = params?.destination || "Paris";
@@ -20,6 +29,7 @@ export default function DestinationDetails() {
     rooms: urlParams.get('rooms') || '1'
   };
 
+  // Send the user to the package list, keeping their trip details in the URL.
   const handleBookNow = () => {
     const params = new URLSearchParams(searchData);
     setLocation(`/search?${params.toString()}`);
@@ -31,7 +41,6 @@ export default function DestinationDetails() {
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Destination Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-4">{searchData.destination}</h1>
             <div className="flex items-center gap-4 text-gray-600">
@@ -46,7 +55,6 @@ export default function DestinationDetails() {
             </div>
           </div>
 
-          {/* Trip Summary */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Your Trip Summary</CardTitle>
@@ -83,7 +91,6 @@ export default function DestinationDetails() {
             </CardContent>
           </Card>
 
-          {/* Destination Info */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div>
               <h2 className="text-2xl font-semibold mb-4">About {searchData.destination}</h2>
@@ -126,8 +133,8 @@ export default function DestinationDetails() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-4">
+            {/* Go to /search with dates, people, rooms from this page */}
             <Button 
               onClick={handleBookNow}
               size="lg" 
@@ -135,6 +142,7 @@ export default function DestinationDetails() {
             >
               View Trip Packages
             </Button>
+            {/* Return to Home */}
             <Button 
               variant="outline" 
               size="lg"

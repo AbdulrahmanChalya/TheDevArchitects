@@ -1,3 +1,4 @@
+// Example wrapper — SearchBar with variant="hero".
 import SearchBar from '../SearchBar';
 
 export default function SearchBarExample() {

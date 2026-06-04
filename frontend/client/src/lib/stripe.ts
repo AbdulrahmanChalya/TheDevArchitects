@@ -1,6 +1,12 @@
+// stripe.ts — load Stripe.js in the browser for PaymentPage.
+//
+// isStripeConfigured — true when VITE_STRIPE_PUBLISHABLE_KEY is in frontend/.env
+// stripePromise        — used by <Elements>; null when key is missing (demo mode)
+//
+// Real charges need a server PaymentIntent (secret key never goes in the frontend).
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 
-// Publishable key (pk_test_... / pk_live_...) from frontend/.env
+// From frontend/.env — safe to expose in the browser
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as
   | string
   | undefined;

@@ -1,3 +1,11 @@
+// SearchResults (/search) - trip package listing after a search.
+//
+// Reads query params written by SearchBar (destination, airports, people,
+// budget, startDate, endDate, rooms). Packages come from fetchTripPackages();
+// each card shows cheapest hotel + flight and a computed total for the
+// selected nights and passenger count.
+//
+// "View Details" → /package/:id with the same query string (budget is NOT forwarded).
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
@@ -19,6 +27,7 @@ import {
 const FALLBACK_IMAGE = "/attached_assets/images/Hero_tropical_beach_scene_e5fdeadc.png";
 
 export default function SearchResults() {
+  // Read search criteria from the URL (written by SearchBar).
   const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(location.split("?")[1]);
 
@@ -31,16 +40,17 @@ export default function SearchResults() {
   const endDate = searchParams.get("endDate") || "";
   const rooms = searchParams.get("rooms") || "";
 
+  // Default to 2 travelers and compute the number of nights from the dates.
   const passengers = Math.max(1, parseInt(people || "2", 10));
   const nights = computeNights(startDate, endDate);
 
+  // Load merged packages from tripPackages.ts (four JSON files).
   const { data: packages, isLoading } = useQuery<TripPackage[]>({
     queryKey: ["trip-packages"],
     queryFn: fetchTripPackages,
   });
 
-  // Build the displayed list from real backend data, then filter by the
-  // destination text and budget the user provided.
+  // Filter packages: destination is a loose substring match; budget is max total.
   const results = (packages ?? []).filter((pkg) => {
     if (destination) {
       const haystack = `${pkg.name} ${pkg.country}`.toLowerCase();
@@ -57,6 +67,7 @@ export default function SearchResults() {
     return true;
   });
 
+  // Open a package's detail page, carrying the current search params along.
   const handleViewPackage = (packageId: string) => {
     const params = new URLSearchParams({
       destination,
@@ -74,14 +85,12 @@ export default function SearchResults() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      {/* Search Bar Section */}
       <section className="bg-muted/30 border-b py-6">
         <div className="container mx-auto px-4 md:px-6">
           <SearchBar variant="compact" />
         </div>
       </section>
 
-      {/* Search Criteria Summary */}
       <section className="bg-background py-4 border-b">
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-wrap gap-2 items-center">
@@ -98,7 +107,6 @@ export default function SearchResults() {
         </div>
       </section>
 
-      {/* Results Section */}
       <section className="py-12 flex-1 bg-muted/10">
         <div className="container mx-auto px-4 md:px-6">
           <div className="mb-8">
@@ -134,7 +142,6 @@ export default function SearchResults() {
                     key={pkg.id}
                     className="overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col"
                   >
-                    {/* Package Image */}
                     <div className="relative h-48 overflow-hidden">
                       <img
                         src={`/attached_assets/images/${pkg.image}`}
@@ -208,6 +215,7 @@ export default function SearchResults() {
                             </p>
                           </div>
                         </div>
+                        {/* Open bundle page for this package (keeps search params) */}
                         <Button onClick={() => handleViewPackage(pkg.id)} className="w-full">
                           View Details
                         </Button>
@@ -227,6 +235,7 @@ export default function SearchResults() {
                 <p className="text-sm text-muted-foreground mb-6">
                   Try adjusting your destination or budget
                 </p>
+                {/* No matches — return to Home to search again */}
                 <Button onClick={() => setLocation("/")}>Back to Search</Button>
               </CardContent>
             </Card>

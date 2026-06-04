@@ -1,3 +1,9 @@
+// use-toast.ts — global toast state (shadcn pattern).
+//
+// toast({ title, description }) — show a message from any component
+// useToast() — read active toasts + dismiss (used by <Toaster />)
+//
+// State lives in memory (not React context); SignIn/SignUp call toast() on submit.
 import * as React from "react"
 
 import type {
@@ -24,6 +30,7 @@ const actionTypes = {
 
 let count = 0
 
+// Unique id for each toast.
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   return count.toString()
@@ -55,6 +62,7 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+// After dismiss, remove toast from state after a delay.
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return
@@ -71,6 +79,7 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+// Add, update, dismiss, or remove toasts in the in-memory list.
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
@@ -130,6 +139,7 @@ const listeners: Array<(state: State) => void> = []
 
 let memoryState: State = { toasts: [] }
 
+// Apply reducer and notify all subscribed components.
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
   listeners.forEach((listener) => {
@@ -139,6 +149,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
+// Show a new toast; returns dismiss/update helpers.
 function toast({ ...props }: Toast) {
   const id = genId()
 
@@ -168,6 +179,7 @@ function toast({ ...props }: Toast) {
   }
 }
 
+// Hook: current toasts + toast() and dismiss() for this component.
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 

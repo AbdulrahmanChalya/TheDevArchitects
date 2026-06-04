@@ -1,3 +1,5 @@
+// NotFound — catch-all when no route matches (404).
+// Link returns the user to Home.
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 

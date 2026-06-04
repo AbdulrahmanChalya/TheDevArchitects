@@ -1,3 +1,14 @@
+// PaymentPage (/payment) - checkout.
+//
+// Order comes from URL: destination, dates, people, rooms, packageId, total
+// (total = pre-tax subtotal from TripPackageDetails). Adds 12% tax here.
+//
+// If VITE_STRIPE_PUBLISHABLE_KEY is set → Stripe Elements form (validates
+// card but does NOT charge — PaymentIntent code is commented out).
+// Otherwise → DemoCheckout banner + one-click continue.
+//
+// Note: server/routes.ts has a separate Stripe Checkout Session endpoint
+// that this page does not use.
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -11,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { Lock, MapPin, Calendar, Users, ShieldCheck, AlertTriangle } from "lucide-react";
 import { stripePromise, isStripeConfigured } from "@/lib/stripe";
 
+// Tax applied on top of the subtotal that was passed in via the URL.
 const TAX_RATE = 0.12;
 
 interface OrderSummary {
@@ -25,6 +37,7 @@ interface OrderSummary {
   total: number;
 }
 
+// Reads the order details from the URL and works out taxes and the total.
 function useOrderSummary(): OrderSummary {
   const [location] = useLocation();
   const params = new URLSearchParams(location.split("?")[1] ?? "");
@@ -43,6 +56,7 @@ function useOrderSummary(): OrderSummary {
   };
 }
 
+// Navigate to the confirmation page, passing the booking details along.
 function goToSuccess(
   setLocation: (path: string) => void,
   order: OrderSummary,
@@ -70,8 +84,8 @@ const CARD_ELEMENT_OPTIONS = {
   },
 };
 
-/** Real Stripe form. Validates the card via Stripe.js (publishable key only).
- *  A full charge additionally needs a backend PaymentIntent — see the note below. */
+// Stripe Elements checkout: createPaymentMethod is best-effort; booking always
+// continues to success until a backend PaymentIntent endpoint exists.
 function StripeCheckoutForm({ order }: { order: OrderSummary }) {
   const [, setLocation] = useLocation();
   const stripe = useStripe();
@@ -81,6 +95,7 @@ function StripeCheckoutForm({ order }: { order: OrderSummary }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Try to validate the card with Stripe, but never block the booking on it.
   const handlePay = async () => {
     setErrorMsg(null);
     setLoading(true);
@@ -150,6 +165,7 @@ function StripeCheckoutForm({ order }: { order: OrderSummary }) {
 
       {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
 
+      {/* Best-effort card check, then booking-success */}
       <Button
         onClick={handlePay}
         size="lg"
@@ -166,8 +182,8 @@ function StripeCheckoutForm({ order }: { order: OrderSummary }) {
   );
 }
 
-/** Shown when no VITE_STRIPE_PUBLISHABLE_KEY is set. Keeps the booking flow
- *  usable while making the missing configuration obvious. */
+// Fallback when Stripe env key is missing — still completes the booking flow.
+// Skip Stripe; go straight to booking-success with URL params from order.
 function DemoCheckout({ order }: { order: OrderSummary }) {
   const [, setLocation] = useLocation();
   return (
@@ -184,6 +200,7 @@ function DemoCheckout({ order }: { order: OrderSummary }) {
           </p>
         </div>
       </div>
+      {/* No Stripe key — skip payment, go to confirmation */}
       <Button
         onClick={() => goToSuccess(setLocation, order)}
         size="lg"
@@ -195,9 +212,11 @@ function DemoCheckout({ order }: { order: OrderSummary }) {
   );
 }
 
+// Renders Stripe form or demo checkout based on isStripeConfigured.
 export default function PaymentPage() {
   const order = useOrderSummary();
 
+  // Show a readable date in the order summary (or raw string if invalid).
   const formatDate = (value: string) => {
     if (!value) return "";
     const d = new Date(value);
@@ -214,7 +233,6 @@ export default function PaymentPage() {
             <h1 className="text-3xl font-bold mb-8">Complete Your Booking</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Payment */}
               <div className="lg:col-span-2">
                 <Card>
                   <CardHeader>
@@ -235,7 +253,6 @@ export default function PaymentPage() {
                 </Card>
               </div>
 
-              {/* Order Summary */}
               <div className="lg:col-span-1">
                 <Card className="sticky top-16">
                   <CardHeader>
