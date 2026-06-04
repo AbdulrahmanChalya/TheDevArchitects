@@ -1,9 +1,11 @@
+// Site footer. Newsletter submit is a stub (no API). Footer links are placeholders.
 import { Plane, Facebook, Twitter, Instagram, Mail } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function Footer() {
+  // Prevent reload; log email only (no newsletter API yet).
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Newsletter signup triggered");
@@ -22,15 +24,20 @@ export default function Footer() {
               Your perfect trip planner. Discover amazing destinations and create unforgettable memories.
             </p>
             <div className="flex gap-3">
+
+              {/* Social link placeholder — no URL yet */}
               <Button variant="ghost" size="icon" className="h-9 w-9" data-testid="button-facebook">
                 <Facebook className="h-4 w-4" />
               </Button>
+              {/* Social link placeholder — no URL yet */}
               <Button variant="ghost" size="icon" className="h-9 w-9" data-testid="button-twitter">
                 <Twitter className="h-4 w-4" />
               </Button>
+              {/* Social link placeholder — no URL yet */}
               <Button variant="ghost" size="icon" className="h-9 w-9" data-testid="button-instagram">
                 <Instagram className="h-4 w-4" />
               </Button>
+              
             </div>
           </div>
 
@@ -39,28 +46,40 @@ export default function Footer() {
             <ul className="space-y-2.5">
               <li>
                 <Link href="/">
-                  <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-europe">
+                  <span
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    data-testid="link-footer-europe"
+                  >
                     Europe
                   </span>
                 </Link>
               </li>
               <li>
                 <Link href="/">
-                  <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-asia">
+                  <span
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    data-testid="link-footer-asia"
+                  >
                     Asia
                   </span>
                 </Link>
               </li>
               <li>
                 <Link href="/">
-                  <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-americas">
+                  <span
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    data-testid="link-footer-americas"
+                  >
                     Americas
                   </span>
                 </Link>
               </li>
               <li>
                 <Link href="/">
-                  <span className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer" data-testid="link-footer-popular">
+                  <span
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    data-testid="link-footer-popular"
+                  >
                     Popular Destinations
                   </span>
                 </Link>
@@ -72,22 +91,38 @@ export default function Footer() {
             <h4 className="font-semibold text-foreground mb-4">Support</h4>
             <ul className="space-y-2.5">
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-help">
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-footer-help"
+                >
                   Help Center
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-contact">
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-footer-contact"
+                >
                   Contact Us
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-footer-privacy"
+                >
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-terms">
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-footer-terms"
+                >
                   Terms of Service
                 </a>
               </li>
@@ -109,6 +144,7 @@ export default function Footer() {
                   data-testid="input-newsletter-email"
                 />
               </div>
+              {/* Submit email — logs only, no backend */}
               <Button type="submit" className="w-full" data-testid="button-newsletter-submit">
                 Subscribe
               </Button>
@@ -117,9 +153,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t mt-12 pt-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            © 2025 GetawayHub. All rights reserved.
-          </p>
+          <p className="text-sm text-muted-foreground">© 2025 GetawayHub. All rights reserved.</p>
         </div>
       </div>
     </footer>

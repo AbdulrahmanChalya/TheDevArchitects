@@ -8,11 +8,15 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, isValid } from "date-fns";
 import { useLocation } from "wouter";
 
+// SearchBar — trip search form used on Home and SearchResults.
+// Submit builds /search?destination=...&dates=... and navigates there.
+// On /search, reads the same params back into the form (shareable URL).
+
 interface SearchBarProps {
-  variant?: "hero" | "compact";
+  variant?: "hero" | "compact"; // "hero" on Home, "compact" on SearchResults
 }
 
-// TODO: remove mock functionality - Replace with actual API data
+// Hardcoded autocomplete lists (TODO: replace with API)
 const DESTINATION_SUGGESTIONS = [
   "Paris, France",
   "Tokyo, Japan",
@@ -41,7 +45,7 @@ const AIRPORT_SUGGESTIONS = [
   "ORD - O'Hare International Airport (Chicago)"
 ];
 
-// Airport locations for proximity calculation
+// Lat/lng for each airport code — used when geolocation API fails
 const AIRPORT_LOCATIONS = {
   "JFK": { lat: 40.6413, lng: -73.7781, name: "JFK - John F. Kennedy International Airport (New York)" },
   "LAX": { lat: 33.9425, lng: -118.4081, name: "LAX - Los Angeles International Airport (Los Angeles)" },
@@ -57,17 +61,22 @@ const AIRPORT_LOCATIONS = {
 
 export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const [, setLocation] = useLocation();
+
+  // Text fields + dates that get serialized into the URL on search.
+  // people/rooms are strings because they mirror URL params; travelers
+  // below holds the numeric counts that update people/rooms on change.
   const [searchData, setSearchData] = useState({
-    destination: "",
-    departureAirport: "",
+    destination: "",       // e.g. "Paris, France"
+    departureAirport: "",  // full label string from suggestions
     arrivalAirport: "",
-    people: "",
-    budget: "",
+    people: "",            // total guests as string (adults + children)
+    budget: "",            // max USD budget as string
     startDate: undefined as Date | undefined,
     endDate: undefined as Date | undefined,
-    rooms: ""
+    rooms: "",             // room count as string
   });
 
+  // Guest/room counts (synced into searchData.people and searchData.rooms).
   const [travelers, setTravelers] = useState({
     adults: 1,
     children: 0,
@@ -79,10 +88,12 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [dateError, setDateError] = useState("");
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  // After geolocation, departure airport list is replaced with API/fallback nearby results
   const [nearbyAirports, setNearbyAirports] = useState<string[]>([]);
   const travelersRef = useRef<HTMLDivElement>(null);
   const dateRef = useRef<HTMLDivElement>(null);
 
+  // Autocomplete open state and filtered suggestion lists.
   const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
   const [showDepartureAirportSuggestions, setShowDepartureAirportSuggestions] = useState(false);
   const [showArrivalAirportSuggestions, setShowArrivalAirportSuggestions] = useState(false);
@@ -93,6 +104,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const departureAirportRef = useRef<HTMLDivElement>(null);
   const arrivalAirportRef = useRef<HTMLDivElement>(null);
 
+  // Close open suggestion panels on outside click.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (destinationRef.current && !destinationRef.current.contains(event.target as Node)) {
@@ -123,7 +135,8 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     return isValid(parsed) ? parsed : undefined;
   };
 
-  // Restore search data from URL parameters on component mount
+  // On first load, pre-fill the form from the URL (so a shared/refreshed
+  // search link keeps its values).
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     
@@ -163,7 +176,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     }
   }, []);
 
-  // Calculate distance between two coordinates
+  // Haversine formula — distance in km between two lat/lng points
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 6371; // Earth's radius in kilometers
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -175,7 +188,8 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     return R * c;
   };
 
-  // Get user's current location
+  // Ask the browser for the user's location, then fetch nearby airports from
+  // the API (falling back to a local distance calculation if that fails).
   const getCurrentLocation = async () => {
     console.log("getCurrentLocation called");
     
@@ -194,6 +208,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
         
         try {
           // Fetch nearby airports from API
+          // TODO: use import.meta.env.VITE_BACKEND_URL instead of hardcoded localhost
           const response = await fetch(`http://localhost:8000/api/airports/nearby?lat=${latitude}&lng=${longitude}&limit=5`);
           
           if (!response.ok) {
@@ -203,15 +218,12 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
           const airports = await response.json();
           console.log("Nearby airports from API:", airports);
           
-          // Format airport names for display
           const nearby = airports.map((airport: any) => 
             `${airport.code} - ${airport.name} (${airport.city}) - ${airport.distance}km`
           );
           
           setNearbyAirports(nearby);
           setFilteredDepartureAirports(nearby);
-          
-          // Show success message
           alert(`Found ${nearby.length} nearby airports based on your location!`);
         } catch (error) {
           console.error("Error fetching nearby airports:", error);
@@ -253,14 +265,16 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     );
   };
 
+  // When adults/children change, bump room count if guests exceed 4 per room
   const autoAdjustRooms = (adults: number, children: number, currentRooms: number) => {
     const totalGuests = adults + children;
-    const maxGuestsPerRoom = 4; // Assuming max 4 guests per room
+    const maxGuestsPerRoom = 4;
     const minRoomsNeeded = Math.ceil(totalGuests / maxGuestsPerRoom);
     
     return Math.max(minRoomsNeeded, currentRooms);
   };
 
+  // Increment/decrement a traveler count and keep people/rooms in sync.
   const updateTravelers = (type: 'adults' | 'children' | 'pets' | 'rooms', increment: boolean) => {
     setTravelers(prev => {
       const newValue = increment ? prev[type] + 1 : Math.max(0, prev[type] - 1);
@@ -285,6 +299,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     });
   };
 
+  // Formats selected dates for the date trigger (or "Select dates").
   const getDateRangeText = () => {
     const hasStart = searchData.startDate && isValid(searchData.startDate);
     const hasEnd = searchData.endDate && isValid(searchData.endDate);
@@ -296,6 +311,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     return "Select dates";
   };
 
+  // Human-readable summary of travelers state for the guests field.
   const getTravelersText = () => {
     let text = `${travelers.adults} adult${travelers.adults !== 1 ? 's' : ''}`;
     if (travelers.children > 0) {
@@ -308,6 +324,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     return text;
   };
 
+  // Sets dateError and returns false if dates are invalid; blocks form submit
   const validateDates = (startDate: Date | undefined, endDate: Date | undefined) => {
     if (startDate && endDate) {
       const today = new Date();
@@ -326,16 +343,20 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     return true;
   };
 
+  // Save check-in date and re-run date rules.
   const handleStartDateChange = (date: Date | undefined) => {
     setSearchData({ ...searchData, startDate: date });
     validateDates(date, searchData.endDate);
   };
 
+  // Save check-out date and re-run date rules.
   const handleEndDateChange = (date: Date | undefined) => {
     setSearchData({ ...searchData, endDate: date });
     validateDates(searchData.startDate, date);
   };
 
+  // Validate the dates, then navigate to the results page with all the
+  // search values in the query string.
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -358,6 +379,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     setShowDestinationSuggestions(false);
   };
 
+  // Filter destination list as the user types.
   const handleDestinationChange = (value: string) => {
     setSearchData({ ...searchData, destination: value });
     const filtered = DESTINATION_SUGGESTIONS.filter(dest =>
@@ -367,6 +389,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     setShowDestinationSuggestions(true);
   };
 
+  // Uses nearby list after geolocation, otherwise the default AIRPORT_SUGGESTIONS.
   const handleDepartureAirportChange = (value: string) => {
     setSearchData({ ...searchData, departureAirport: value });
     const baseAirports = nearbyAirports.length > 0 ? nearbyAirports : AIRPORT_SUGGESTIONS;
@@ -377,6 +400,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     setShowDepartureAirportSuggestions(true);
   };
 
+  // Filter arrival airport suggestions as the user types.
   const handleArrivalAirportChange = (value: string) => {
     setSearchData({ ...searchData, arrivalAirport: value });
     const filtered = AIRPORT_SUGGESTIONS.filter(airport =>
@@ -386,16 +410,19 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     setShowArrivalAirportSuggestions(true);
   };
 
+  // User picked one airport from the departure suggestions.
   const selectDepartureAirport = (airport: string) => {
     setSearchData({ ...searchData, departureAirport: airport });
     setShowDepartureAirportSuggestions(false);
   };
 
+  // Apply chosen arrival airport and close the list.
   const selectArrivalAirport = (airport: string) => {
     setSearchData({ ...searchData, arrivalAirport: airport });
     setShowArrivalAirportSuggestions(false);
   };
 
+  // Apply chosen destination and close the list.
   const selectDestination = (destination: string) => {
     setSearchData({ ...searchData, destination });
     setShowDestinationSuggestions(false);
@@ -404,12 +431,11 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const isHero = variant === "hero";
 
   return (
-    <form 
-      onSubmit={handleSearch} 
+    <form
+      onSubmit={handleSearch}
       className={`w-full ${isHero ? 'bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 md:p-8' : 'bg-card rounded-xl shadow-md p-4'}`}
       data-testid="form-search"
     >
-      {/* Destination Field - Full Width Row */}
       <div className="mb-4">
         <div className="space-y-2 relative" ref={destinationRef}>
           <Label htmlFor="destination" className="text-sm font-semibold text-gray-700">
@@ -430,6 +456,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
           </div>
           {showDestinationSuggestions && filteredDestinations.length > 0 && (
             <div className="absolute z-50 w-full mt-1 bg-popover border border-popover-border rounded-lg shadow-lg max-h-60 overflow-auto">
+              {/* Each row: set destination from suggestion */}
               {filteredDestinations.map((dest) => (
                 <button
                   key={dest}
@@ -449,9 +476,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
         </div>
       </div>
 
-      {/* Airport Fields Row */}
       <div className="mb-4 grid gap-4 grid-cols-1 md:grid-cols-2">
-        {/* Departure Airport */}
         <div className="space-y-2 relative" ref={departureAirportRef}>
           <Label htmlFor="departureAirport" className="text-sm font-semibold text-gray-700">
             Departure Airport
@@ -470,7 +495,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
           </div>
           {showDepartureAirportSuggestions && (
             <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-auto">
-              {/* Current Location Option */}
+              {/* Use GPS to load nearby departure airports */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -494,6 +519,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
                   </div>
                 </div>
               )}
+              {/* Each row: set departure airport */}
               {filteredDepartureAirports.map((airport) => (
                 <button
                   key={airport}
@@ -511,7 +537,6 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
           )}
         </div>
 
-        {/* Arrival Airport */}
         <div className="space-y-2 relative" ref={arrivalAirportRef}>
           <Label htmlFor="arrivalAirport" className="text-sm font-semibold text-gray-700">
             Arrival Airport
@@ -530,6 +555,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
           </div>
           {showArrivalAirportSuggestions && filteredArrivalAirports.length > 0 && (
             <div className="absolute z-50 w-full mt-1 bg-popover border border-popover-border rounded-lg shadow-lg max-h-60 overflow-auto">
+              {/* Each row: set arrival airport */}
               {filteredArrivalAirports.map((airport) => (
                 <button
                   key={airport}
@@ -548,14 +574,12 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
         </div>
       </div>
 
-      {/* Other Search Fields */}
       <div className={`grid gap-4 ${isHero ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2'}`}>
-
-        {/* Date Range */}
         <div className="space-y-3 relative" ref={dateRef}>
           <Label htmlFor="dateRange" className="text-sm font-semibold text-gray-700">
             Dates
           </Label>
+          {/* Open or close check-in / check-out calendars */}
           <Button
             type="button"
             variant="outline"
@@ -596,11 +620,11 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
           )}
         </div>
 
-        {/* Travelers & Rooms */}
         <div className="space-y-3 relative" ref={travelersRef}>
           <Label htmlFor="travelers" className="text-sm font-semibold text-gray-700">
             Guests & Rooms
           </Label>
+          {/* Open or close guests & rooms panel */}
           <Button
             type="button"
             variant="outline"
@@ -613,13 +637,13 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
           
           {showTravelersDropdown && (
             <div className="absolute z-50 w-80 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-6">
-              {/* Adults */}
               <div className="flex items-center justify-between py-4 border-b border-gray-100">
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">Adults</div>
                   <div className="text-sm text-gray-500 mt-1">Ages 13+</div>
                 </div>
                 <div className="flex items-center gap-4">
+                  {/* Fewer adults */}
                   <Button
                     type="button"
                     variant="outline"
@@ -631,6 +655,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
                     <span className="text-lg font-semibold">−</span>
                   </Button>
                   <span className="w-12 text-center text-lg font-semibold">{travelers.adults}</span>
+                  {/* More adults */}
                   <Button
                     type="button"
                     variant="outline"
@@ -643,13 +668,13 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
                 </div>
               </div>
               
-              {/* Children */}
               <div className="flex items-center justify-between py-4 border-b border-gray-100">
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">Children</div>
                   <div className="text-sm text-gray-500 mt-1">Ages 2-12</div>
                 </div>
                 <div className="flex items-center gap-4">
+                  {/* Fewer children */}
                   <Button
                     type="button"
                     variant="outline"
@@ -661,6 +686,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
                     <span className="text-lg font-semibold">−</span>
                   </Button>
                   <span className="w-12 text-center text-lg font-semibold">{travelers.children}</span>
+                  {/* More children */}
                   <Button
                     type="button"
                     variant="outline"
@@ -673,13 +699,13 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
                 </div>
               </div>
               
-              {/* Rooms */}
               <div className="flex items-center justify-between py-4 border-b border-gray-100">
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">Rooms</div>
                   <div className="text-sm text-gray-500 mt-1">Hotel rooms needed</div>
                 </div>
                 <div className="flex items-center gap-4">
+                  {/* Fewer rooms */}
                   <Button
                     type="button"
                     variant="outline"
@@ -691,6 +717,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
                     <span className="text-lg font-semibold">−</span>
                   </Button>
                   <span className="w-12 text-center text-lg font-semibold">{travelers.rooms}</span>
+                  {/* More rooms */}
                   <Button
                     type="button"
                     variant="outline"
@@ -703,13 +730,13 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
                 </div>
               </div>
               
-              {/* Pets */}
               <div className="flex items-center justify-between py-4">
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">Pets</div>
                   <div className="text-sm text-gray-500 mt-1">Service animals</div>
                 </div>
                 <div className="flex items-center gap-4">
+                  {/* Fewer pets */}
                   <Button
                     type="button"
                     variant="outline"
@@ -721,6 +748,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
                     <span className="text-lg font-semibold">−</span>
                   </Button>
                   <span className="w-12 text-center text-lg font-semibold">{travelers.pets}</span>
+                  {/* More pets */}
                   <Button
                     type="button"
                     variant="outline"
@@ -736,7 +764,6 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
           )}
         </div>
 
-        {/* Budget */}
         <div className="space-y-3">
           <Label htmlFor="budget" className="text-sm font-semibold text-gray-700">
             Budget (USD)
@@ -767,9 +794,10 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
         </div>
       )}
 
-      <Button 
-        type="submit" 
-        size="lg" 
+      {/* Run search: validate dates, then go to /search with query params */}
+      <Button
+        type="submit"
+        size="lg"
         className="w-full mt-8 h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200"
         disabled={!!dateError}
         data-testid="button-search"

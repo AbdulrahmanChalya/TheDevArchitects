@@ -1,3 +1,7 @@
+// Vite dev server API routes (not used by PaymentPage today).
+//
+// POST /api/create-checkout-session — Stripe Checkout redirect flow (legacy).
+// PaymentPage uses client-side Elements instead.
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";

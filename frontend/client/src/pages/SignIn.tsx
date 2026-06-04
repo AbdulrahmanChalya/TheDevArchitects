@@ -1,3 +1,8 @@
+// SignIn (/signin) - mock authentication (no Firebase/backend yet).
+//
+// Query param ?redirect=... is set by TripPackageDetails before payment.
+// Email/password are optional by design; submit always succeeds after toast.
+// Google/Facebook OAuth handlers are stubs (console.log only).
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Plane, Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -18,6 +23,7 @@ export default function SignIn() {
     rememberMe: false
   });
 
+  // Mock login: show toast, then go to ?redirect or home (no API call).
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Sign in attempted with:", formData);
@@ -28,6 +34,7 @@ export default function SignIn() {
       description: "Welcome back to GetawayHub!",
     });
 
+    // Continue to wherever the user was headed (e.g. /payment), else home.
     const redirect = new URLSearchParams(window.location.search).get("redirect");
     setTimeout(() => {
       setLocation(redirect || "/");
@@ -114,6 +121,7 @@ export default function SignIn() {
               </a>
             </div>
 
+            {/* Mock sign-in — always succeeds */}
             <Button type="submit" className="w-full" size="lg" data-testid="button-signin">
               Sign In
             </Button>

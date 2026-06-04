@@ -1,13 +1,15 @@
-// Builds "trip packages" entirely from the existing backend JSON files
-// (served by the dev server at /backend/*.json). No invented data:
-//   - destinations.json  -> destination meta + activity labels
-//   - hotels.json        -> hotels keyed by destinationId
-//   - flights.json       -> flights keyed by destinationId
-//   - recommendations.json -> named attractions per destination
+// tripPackages.ts — build bookable packages from static JSON under /backend/.
 //
-// A package exists only for destinations that have at least one hotel
-// AND one flight (currently Paris, Tokyo, Bali).
+// Data sources (no API, no invented rows):
+//   destinations.json     — where to go, image, rating, activity tags
+//   hotels.json           — hotels per destinationId
+//   flights.json          — flights per destinationId
+//   recommendations.json  — attraction names/descriptions per destination
+//
+// A destination becomes a package only if it has at least one hotel AND one flight
+// (in practice: Paris, Tokyo, Bali).
 
+// One row from destinations.json.
 export interface BackendDestination {
   id: string;
   name: string;
@@ -22,9 +24,10 @@ export interface BackendDestination {
   bestMonths: string[];
 }
 
+// One row from hotels.json.
 export interface BackendHotel {
   id: string;
-  destinationId: string;
+  destinationId: string; // links to BackendDestination.id
   name: string;
   rating: number;
   pricePerNight: number;
@@ -32,25 +35,28 @@ export interface BackendHotel {
   reviewCount: number;
 }
 
+// One row from flights.json.
 export interface BackendFlight {
   id: string;
-  destinationId: string;
+  destinationId: string; // links to BackendDestination.id
   airline: string;
   departureAirport: string;
   arrivalAirport: string;
-  price: number;
+  price: number; // per passenger
   duration: string;
   class: string;
 }
 
+// Activity line inside recommendations.json (not priced in JSON).
 export interface BackendAttraction {
   name: string;
   description: string;
   icon: string;
 }
 
+// Merged view used by SearchResults and TripPackageDetails.
 export interface TripPackage {
-  id: string; // destinationId
+  id: string; // same as destinationId
   destinationId: string;
   name: string;
   country: string;
@@ -64,6 +70,7 @@ export interface TripPackage {
   attractions: BackendAttraction[];
 }
 
+// Price breakdown returned to pages (hotel + flight; attractions always $0).
 export interface PackagePricing {
   hotel?: BackendHotel;
   flight?: BackendFlight;
@@ -71,11 +78,12 @@ export interface PackagePricing {
   passengers: number;
   hotelCost: number;
   flightCost: number;
-  attractionsCost: number; // attractions have no price in source data -> included (0)
+  attractionsCost: number; // always 0 — included in bundle, not in JSON
   total: number;
   perPerson: number;
 }
 
+// GET JSON from a path; throw if the file is missing or not ok.
 async function fetchJson<T>(path: string): Promise<T> {
   const res = await fetch(path);
   if (!res.ok) {
@@ -84,6 +92,7 @@ async function fetchJson<T>(path: string): Promise<T> {
   return res.json();
 }
 
+// Load all four files in parallel, merge into TripPackage[], drop incomplete destinations.
 export async function fetchTripPackages(): Promise<TripPackage[]> {
   const [destinations, hotels, flights, recommendations] = await Promise.all([
     fetchJson<BackendDestination[]>("/backend/destinations.json"),
@@ -96,10 +105,11 @@ export async function fetchTripPackages(): Promise<TripPackage[]> {
 
   return destinations
     .map((dest) => {
+      // Keep only hotels and flights for this destination.
       const destHotels = hotels.filter((h) => h.destinationId === dest.id);
       const destFlights = flights.filter((f) => f.destinationId === dest.id);
 
-      // Match recommendations by destination name, e.g. "Paris, France" -> "Paris"
+      // Match "Paris, France" in recommendations to dest.name "Paris".
       const rec = recommendations.find((r) =>
         r.destination.toLowerCase().includes(dest.name.toLowerCase()),
       );
@@ -122,14 +132,17 @@ export async function fetchTripPackages(): Promise<TripPackage[]> {
     .filter((pkg) => pkg.hotels.length > 0 && pkg.flights.length > 0);
 }
 
+// Pick the cheapest hotel option for display / default pricing.
 export function getCheapestHotel(pkg: TripPackage): BackendHotel | undefined {
   return [...pkg.hotels].sort((a, b) => a.pricePerNight - b.pricePerNight)[0];
 }
 
+// Pick the cheapest flight option for display / default pricing.
 export function getCheapestFlight(pkg: TripPackage): BackendFlight | undefined {
   return [...pkg.flights].sort((a, b) => a.price - b.price)[0];
 }
 
+// Nights between start and end (URL dates). Uses fallback (default 5) if invalid or missing.
 export function computeNights(
   startDate?: string | null,
   endDate?: string | null,
@@ -146,6 +159,8 @@ export function computeNights(
   return fallback;
 }
 
+// Total trip cost: (hotel nightly × nights) + (flight price × passengers).
+// Uses passed hotel/flight or falls back to cheapest in the package.
 export function computePackagePricing(
   pkg: TripPackage,
   options: {
@@ -162,7 +177,7 @@ export function computePackagePricing(
 
   const hotelCost = hotel ? hotel.pricePerNight * nights : 0;
   const flightCost = flight ? flight.price * passengers : 0;
-  const attractionsCost = 0; // no price data in source -> attractions included
+  const attractionsCost = 0;
   const total = hotelCost + flightCost + attractionsCost;
 
   return {

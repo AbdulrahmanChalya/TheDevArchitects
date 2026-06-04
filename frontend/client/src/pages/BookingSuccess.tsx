@@ -1,3 +1,9 @@
+// BookingSuccess (/booking-success) - confirmation after payment (mock or demo).
+//
+// All booking fields are read from window.location.search.
+// bookingReference is generated client-side (not from a server).
+// hotelId/flightId in the URL are optional legacy fields — bundle flow
+// does not pass them, so "Hotel/Flight booked" lines usually don't show.
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +12,8 @@ import Header from "@/components/Header";
 
 export default function BookingSuccess() {
   const [, setLocation] = useLocation();
-  
+
+  // Same fields PaymentPage passed in the URL (no server booking record).
   const urlParams = new URLSearchParams(window.location.search);
   const bookingData = {
     destination: urlParams.get('destination') || 'Paris',
@@ -19,6 +26,7 @@ export default function BookingSuccess() {
     flightId: urlParams.get('flightId')
   };
 
+  // Fake booking reference: "GH" + the last 6 digits of the current timestamp.
   const bookingReference = `GH${Date.now().toString().slice(-6)}`;
 
   return (
@@ -27,7 +35,6 @@ export default function BookingSuccess() {
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Success Icon */}
           <div className="mb-8">
             <CheckCircle className="h-24 w-24 text-green-500 mx-auto mb-4" />
             <h1 className="text-4xl font-bold text-green-600 mb-2">Booking Confirmed!</h1>
@@ -36,7 +43,6 @@ export default function BookingSuccess() {
             </p>
           </div>
 
-          {/* Booking Details */}
           <Card className="mb-8 text-left">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -111,7 +117,6 @@ export default function BookingSuccess() {
             </CardContent>
           </Card>
 
-          {/* Next Steps */}
           <Card className="mb-8 text-left">
             <CardHeader>
               <CardTitle>What's Next?</CardTitle>
@@ -145,8 +150,8 @@ export default function BookingSuccess() {
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* Start a new trip from Home */}
             <Button 
               size="lg"
               onClick={() => setLocation('/')}
@@ -154,6 +159,7 @@ export default function BookingSuccess() {
             >
               Plan Another Trip
             </Button>
+            {/* Browser print dialog for this page */}
             <Button 
               variant="outline" 
               size="lg"
