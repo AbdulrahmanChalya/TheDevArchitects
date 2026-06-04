@@ -84,7 +84,8 @@ export default function AIAssistantChat() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/assistant/chat", {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+        const response = await fetch(`${backendUrl}/api/assistant/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
