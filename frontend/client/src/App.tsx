@@ -27,6 +27,7 @@ import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import NotFound from "@/pages/not-found";
 import DummyPage from "./pages/DummyPage";
+import AIAssistantChat from "@/components/AIAssistantChat";
 
 // Maps each path to one page. Last route with no path = 404.
 function Router() {
@@ -53,6 +54,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
+        <AIAssistantChat />
       </TooltipProvider>
     </QueryClientProvider>
   );
