@@ -1,6 +1,7 @@
 // SignIn (/signin) - mock authentication (no Firebase/backend yet).
 //
-// Query param ?redirect=... is set by TripPackageDetails before payment.
+// Query param ?redirect=... — after search, points to /search?...; before
+// payment, points to /payment?... Backend search runs async while user signs in.
 // Email/password are optional by design; submit always succeeds after toast.
 // Google/Facebook OAuth handlers are stubs (console.log only).
 import { useState } from "react";

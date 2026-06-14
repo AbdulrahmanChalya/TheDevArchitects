@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { MapPin, Users, DollarSign, Calendar, Bed, Search, Plane, PlaneTakeoff, PlaneLanding } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +8,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, isValid } from "date-fns";
 import { useLocation } from "wouter";
+import { startBackendSearch } from "@/lib/backendSearch";
 
 // SearchBar — trip search form used on Home and SearchResults.
-// Submit builds /search?destination=...&dates=... and navigates there.
+// Submit starts backend search in the background, then sign-in → /search.
 // On /search, reads the same params back into the form (shareable URL).
 
 interface SearchBarProps {
@@ -61,6 +63,7 @@ const AIRPORT_LOCATIONS = {
 
 export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   // Text fields + dates that get serialized into the URL on search.
   // people/rooms are strings because they mirror URL params; travelers
@@ -355,8 +358,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     validateDates(searchData.startDate, date);
   };
 
-  // Validate the dates, then navigate to the results page with all the
-  // search values in the query string.
+  // Validate dates, start backend search, then go to sign-in before results.
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -364,18 +366,41 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
       return;
     }
     
-    console.log("Search triggered with:", searchData);
-    const params = new URLSearchParams({
+    const startDate =
+      searchData.startDate && isValid(searchData.startDate)
+        ? format(searchData.startDate, "yyyy-MM-dd")
+        : "";
+    const endDate =
+      searchData.endDate && isValid(searchData.endDate)
+        ? format(searchData.endDate, "yyyy-MM-dd")
+        : "";
+
+    const formParams = {
       destination: searchData.destination,
       departureAirport: searchData.departureAirport,
       arrivalAirport: searchData.arrivalAirport,
       people: searchData.people,
       budget: searchData.budget,
-      startDate: searchData.startDate && isValid(searchData.startDate) ? format(searchData.startDate, 'yyyy-MM-dd') : '',
-      endDate: searchData.endDate && isValid(searchData.endDate) ? format(searchData.endDate, 'yyyy-MM-dd') : '',
-      rooms: searchData.rooms
+      startDate,
+      endDate,
+      rooms: searchData.rooms,
+    };
+
+    startBackendSearch(queryClient, formParams);
+
+    const params = new URLSearchParams({
+      destination: formParams.destination,
+      departureAirport: formParams.departureAirport,
+      arrivalAirport: formParams.arrivalAirport,
+      people: formParams.people,
+      budget: formParams.budget,
+      startDate: formParams.startDate,
+      endDate: formParams.endDate,
+      rooms: formParams.rooms,
     });
-    setLocation(`/search?${params.toString()}`);
+
+    const redirect = `/search?${params.toString()}`;
+    setLocation(`/signin?redirect=${encodeURIComponent(redirect)}`);
     setShowDestinationSuggestions(false);
   };
 

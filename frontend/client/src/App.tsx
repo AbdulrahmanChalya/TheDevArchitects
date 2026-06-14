@@ -1,7 +1,8 @@
 // App — root of the React tree and URL router.
 //
 // Main booking flow (happy path):
-//   /  →  /search  →  /package/:id  →  /signin?redirect=...  →  /payment  →  /booking-success
+//   /  →  /signin?redirect=/search...  →  /search  →  /package/:id
+//        →  /signin?redirect=/payment...  →  /payment  →  /booking-success
 //
 // Other routes:
 //   /destination/:id  — destination info from Home card click

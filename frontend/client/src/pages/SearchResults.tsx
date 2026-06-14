@@ -1,11 +1,7 @@
-// SearchResults (/search) - trip package listing after a search.
+// SearchResults (/search) - trip package listing after sign-in.
 //
-// Reads query params written by SearchBar (destination, airports, people,
-// budget, startDate, endDate, rooms). Packages come from fetchTripPackages();
-// each card shows cheapest hotel + flight and a computed total for the
-// selected nights and passenger count.
-//
-// "View Details" → /package/:id with the same query string (budget is NOT forwarded).
+// SearchBar starts GET /api/search in the background before sign-in; this page
+// reuses that React Query cache while still showing packages from JSON.
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
@@ -23,6 +19,11 @@ import {
   computePackagePricing,
   type TripPackage,
 } from "@/lib/tripPackages";
+import {
+  fetchBackendSearch,
+  getBackendSearchQueryKey,
+  searchParamsFromUrl,
+} from "@/lib/backendSearch";
 
 const FALLBACK_IMAGE = "/attached_assets/images/Hero_tropical_beach_scene_e5fdeadc.png";
 
@@ -39,6 +40,16 @@ export default function SearchResults() {
   const startDate = searchParams.get("startDate") || "";
   const endDate = searchParams.get("endDate") || "";
   const rooms = searchParams.get("rooms") || "";
+
+  const formParams = searchParamsFromUrl(searchParams);
+
+  // Subscribe to the async backend search started from SearchBar (same cache key).
+  const { isFetching: isBackendSearchRunning } = useQuery({
+    queryKey: getBackendSearchQueryKey(formParams),
+    queryFn: () => fetchBackendSearch(formParams),
+    enabled: Boolean(formParams.destination || formParams.startDate),
+    retry: 1,
+  });
 
   // Default to 2 travelers and compute the number of nights from the dates.
   const passengers = Math.max(1, parseInt(people || "2", 10));
@@ -115,13 +126,13 @@ export default function SearchResults() {
               Your Trip Packages
             </h1>
             <p className="text-muted-foreground">
-              {isLoading
+              {isLoading || isBackendSearchRunning
                 ? "Building your getaway packages..."
                 : `Found ${results.length} package${results.length === 1 ? "" : "s"} for your trip`}
             </p>
           </div>
 
-          {isLoading ? (
+          {(isLoading || isBackendSearchRunning) ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-[460px] bg-muted animate-pulse rounded-xl" />
