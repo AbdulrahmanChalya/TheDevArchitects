@@ -41,32 +41,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let settled = false;
+    let initialLoad = true;
 
-    const finish = (currentUser: User | null) => {
-      if (settled) return;
-      settled = true;
-      setUser(currentUser);
-      setLoading(false);
-    };
-
-    const timeout = window.setTimeout(() => finish(null), 3000);
+    const timeout = window.setTimeout(() => {
+      if (initialLoad) {
+        initialLoad = false;
+        setLoading(false);
+      }
+    }, 3000);
 
     const unsubscribe = onAuthStateChanged(
       auth,
       (currentUser) => {
         window.clearTimeout(timeout);
-        finish(currentUser);
+        initialLoad = false;
+        setUser(currentUser);
+        setLoading(false);
       },
       (error) => {
         console.error("Firebase auth state error:", error);
         window.clearTimeout(timeout);
-        finish(null);
+        initialLoad = false;
+        setUser(null);
+        setLoading(false);
       },
     );
 
     return () => {
-      settled = true;
       window.clearTimeout(timeout);
       unsubscribe();
     };
@@ -105,6 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
 
       async logout() {
+        setUser(null);
+        setLoading(false);
         await signOut(auth);
       },
     }),
