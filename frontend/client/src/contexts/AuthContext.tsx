@@ -41,11 +41,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    let settled = false;
+
+    const finish = (currentUser: User | null) => {
+      if (settled) return;
+      settled = true;
       setUser(currentUser);
       setLoading(false);
-    });
-    return unsubscribe;
+    };
+
+    const timeout = window.setTimeout(() => finish(null), 3000);
+
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (currentUser) => {
+        window.clearTimeout(timeout);
+        finish(currentUser);
+      },
+      (error) => {
+        console.error("Firebase auth state error:", error);
+        window.clearTimeout(timeout);
+        finish(null);
+      },
+    );
+
+    return () => {
+      settled = true;
+      window.clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []);
 
   const value = useMemo<AuthContextValue>(

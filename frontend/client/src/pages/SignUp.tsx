@@ -101,14 +101,6 @@ export default function SignUp() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">

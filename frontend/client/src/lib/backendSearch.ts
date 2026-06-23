@@ -53,18 +53,37 @@ export function searchParamsFromUrl(urlParams: URLSearchParams): SearchFormParam
 export async function fetchBackendSearch(params: SearchFormParams) {
   const base = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
   const qs = buildBackendSearchQuery(params).toString();
-  const response = await fetch(`${base}/api/search?${qs}`);
-  if (!response.ok) {
-    throw new Error(`Backend search failed (${response.status})`);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(`${base}/api/search?${qs}`, {
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`Backend search failed (${response.status})`);
+    }
+    return response.json();
+  } catch (error) {
+    // Live scraping is optional — static JSON packages still power search results.
+    console.warn("Live search unavailable (is the Nest API running on port 8000?):", error);
+    return null;
+  } finally {
+    window.clearTimeout(timeout);
   }
-  return response.json();
 }
 
 /** Start backend search without blocking navigation to sign-in. */
 export function startBackendSearch(queryClient: QueryClient, params: SearchFormParams) {
+  const hasSearchCriteria = Boolean(
+    params.destination || params.startDate || params.departureAirport || params.arrivalAirport,
+  );
+  if (!hasSearchCriteria) return;
+
   void queryClient.fetchQuery({
     queryKey: getBackendSearchQueryKey(params),
     queryFn: () => fetchBackendSearch(params),
     staleTime: 1000 * 60 * 5,
+    retry: false,
   });
 }

@@ -9,6 +9,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, isValid } from "date-fns";
 import { useLocation } from "wouter";
 import { startBackendSearch } from "@/lib/backendSearch";
+import { useAuth } from "@/contexts/AuthContext";
 
 // SearchBar — trip search form used on Home and SearchResults.
 // Submit starts backend search in the background, then sign-in → /search.
@@ -64,6 +65,7 @@ const AIRPORT_LOCATIONS = {
 export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Text fields + dates that get serialized into the URL on search.
   // people/rooms are strings because they mirror URL params; travelers
@@ -400,7 +402,11 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     });
 
     const redirect = `/search?${params.toString()}`;
-    setLocation(`/signin?redirect=${encodeURIComponent(redirect)}`);
+    if (user) {
+      setLocation(redirect);
+    } else {
+      setLocation(`/signin?redirect=${encodeURIComponent(redirect)}`);
+    }
     setShowDestinationSuggestions(false);
   };
 

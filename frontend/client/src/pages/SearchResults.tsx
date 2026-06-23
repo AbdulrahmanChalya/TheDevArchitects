@@ -28,9 +28,8 @@ import {
 const FALLBACK_IMAGE = "/attached_assets/images/Hero_tropical_beach_scene_e5fdeadc.png";
 
 export default function SearchResults() {
-  // Read search criteria from the URL (written by SearchBar).
-  const [location, setLocation] = useLocation();
-  const searchParams = new URLSearchParams(location.split("?")[1]);
+  const [, setLocation] = useLocation();
+  const searchParams = new URLSearchParams(window.location.search);
 
   const destination = searchParams.get("destination") || "";
   const departureAirport = searchParams.get("departureAirport") || "";
@@ -43,12 +42,12 @@ export default function SearchResults() {
 
   const formParams = searchParamsFromUrl(searchParams);
 
-  // Subscribe to the async backend search started from SearchBar (same cache key).
+  // Track live backend search if SearchBar already started one (never blocks the UI).
   const { isFetching: isBackendSearchRunning } = useQuery({
     queryKey: getBackendSearchQueryKey(formParams),
     queryFn: () => fetchBackendSearch(formParams),
-    enabled: Boolean(formParams.destination || formParams.startDate),
-    retry: 1,
+    enabled: false,
+    retry: false,
   });
 
   // Default to 2 travelers and compute the number of nights from the dates.
@@ -56,9 +55,10 @@ export default function SearchResults() {
   const nights = computeNights(startDate, endDate);
 
   // Load merged packages from tripPackages.ts (four JSON files).
-  const { data: packages, isLoading } = useQuery<TripPackage[]>({
+  const { data: packages, isLoading, isError } = useQuery<TripPackage[]>({
     queryKey: ["trip-packages"],
     queryFn: fetchTripPackages,
+    retry: 1,
   });
 
   // Filter packages: destination is a loose substring match; budget is max total.
@@ -126,13 +126,25 @@ export default function SearchResults() {
               Your Trip Packages
             </h1>
             <p className="text-muted-foreground">
-              {isLoading || isBackendSearchRunning
+              {isLoading
                 ? "Building your getaway packages..."
                 : `Found ${results.length} package${results.length === 1 ? "" : "s"} for your trip`}
+              {isBackendSearchRunning && !isLoading && (
+                <span className="ml-2 text-xs text-primary">(fetching live prices…)</span>
+              )}
             </p>
           </div>
 
-          {(isLoading || isBackendSearchRunning) ? (
+          {isError ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-lg text-muted-foreground mb-4">
+                  Could not load trip packages
+                </p>
+                <Button onClick={() => setLocation("/")}>Back to Home</Button>
+              </CardContent>
+            </Card>
+          ) : isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-[460px] bg-muted animate-pulse rounded-xl" />
