@@ -1,11 +1,34 @@
 // Header — site nav on every page.
-// Logo → Home. Buttons → /signin and /signup (mock auth pages).
-import { Plane, User, Menu } from "lucide-react";
+// Logo → Home. Shows sign-in/sign-up or user menu when authenticated.
+import { Plane, User, Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Header() {
   const [, setLocation] = useLocation();
+  const { user, loading, logout } = useAuth();
+  const { toast } = useToast();
+
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Account";
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Signed out",
+        description: "You have been signed out successfully.",
+      });
+      setLocation("/");
+    } catch {
+      toast({
+        title: "Sign out failed",
+        description: "Unable to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -21,8 +44,6 @@ export default function Header() {
         </Link>
 
         <div className="flex items-center gap-2">
-
-          {/* Mobile menu — not wired yet */}
           <Button
             variant="ghost"
             size="icon"
@@ -32,29 +53,46 @@ export default function Header() {
             <Menu className="h-4 w-4" />
           </Button>
 
-          {/* Go to sign-in page */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="hidden md:flex"
-            onClick={() => setLocation("/signin")}
-            data-testid="button-login"
-          >
-            <User className="h-3 w-3 mr-2" />
-            Sign In
-          </Button>
+          {!loading && user ? (
+            <>
+              <span className="hidden md:inline text-sm text-muted-foreground max-w-[160px] truncate">
+                {displayName}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden md:flex"
+                onClick={handleLogout}
+                data-testid="button-logout"
+              >
+                <LogOut className="h-3 w-3 mr-2" />
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden md:flex"
+                onClick={() => setLocation("/signin")}
+                data-testid="button-login"
+              >
+                <User className="h-3 w-3 mr-2" />
+                Sign In
+              </Button>
 
-          {/* Go to sign-up page */}
-          <Button
-            variant="default"
-            size="sm"
-            className="hidden md:flex"
-            onClick={() => setLocation("/signup")}
-            data-testid="button-signup"
-          >
-            Sign Up
-          </Button>
-          
+              <Button
+                variant="default"
+                size="sm"
+                className="hidden md:flex"
+                onClick={() => setLocation("/signup")}
+                data-testid="button-signup"
+              >
+                Sign Up
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

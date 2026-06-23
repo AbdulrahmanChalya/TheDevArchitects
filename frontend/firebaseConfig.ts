@@ -1,5 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 // import { getAnalytics } from "firebase/analytics";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
 import { vacationResponseSchema } from "./schema/vacationResponse";
@@ -26,7 +27,8 @@ const firebaseConfig = {
 // }
 
 // Initialize Firebase
-const firebaseApp = initializeApp(firebaseConfig);
+export const firebaseApp = initializeApp(firebaseConfig);
+export const auth = getAuth(firebaseApp);
 // const analytics = getAnalytics(app);
 
 // Initialize the Gemini Developer API backend service
