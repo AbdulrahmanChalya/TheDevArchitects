@@ -15,8 +15,8 @@ const DummyPage = () => {
     destinationAirport: "CDG",
     people: "2",
     city: "Paris (and vicinity), France",
-    startDate: "2026-06-10",
-    endDate: "2026-06-30",
+    startDate: "2026-07-01",
+    endDate: "2026-07-30",
     rooms: "1",
   });
 
