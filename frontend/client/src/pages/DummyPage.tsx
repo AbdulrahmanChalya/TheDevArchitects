@@ -2,7 +2,7 @@
 // search API with hardcoded params and logs the result. Not part of the real
 // user flow.
 import React, { useState } from "react";
-import { model } from "../../../firebaseConfig";
+import { model } from "@/lib/firebaseAi";
 import { VacationPackage } from "../../../types/vacation";
 // Dev-only page: one button hits GET /api/search on the Nest backend.
 const DummyPage = () => {

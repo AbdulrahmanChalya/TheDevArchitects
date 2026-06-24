@@ -1,10 +1,8 @@
-// SignIn (/signin) - mock authentication (no Firebase/backend yet).
+// SignIn (/signin) - Firebase email/password and OAuth sign-in.
 //
 // Query param ?redirect=... — after search, points to /search?...; before
-// payment, points to /payment?... Backend search runs async while user signs in.
-// Email/password are optional by design; submit always succeeds after toast.
-// Google/Facebook OAuth handlers are stubs (console.log only).
-import { useState } from "react";
+// payment, points to /payment?...
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Plane, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,33 +11,110 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { getFirebaseErrorMessage } from "@/lib/firebaseErrors";
 
 export default function SignIn() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, loading, signInWithEmail, signInWithGoogle, signInWithFacebook, resetPassword } =
+    useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false
+    rememberMe: true,
   });
 
-  // Mock login: show toast, then go to ?redirect or home (no API call).
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Sign in attempted with:", formData);
-    
-    // TODO: remove mock functionality - Replace with actual authentication
-    toast({
-      title: "Sign In Successful",
-      description: "Welcome back to GetawayHub!",
-    });
+  const redirect = new URLSearchParams(window.location.search).get("redirect");
 
-    // Continue to wherever the user was headed (e.g. /payment), else home.
-    const redirect = new URLSearchParams(window.location.search).get("redirect");
-    setTimeout(() => {
+  useEffect(() => {
+    if (!loading && user) {
       setLocation(redirect || "/");
-    }, 1000);
+    }
+  }, [loading, user, redirect, setLocation]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.email || !formData.password) {
+      toast({
+        title: "Missing credentials",
+        description: "Please enter your email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await signInWithEmail(formData.email, formData.password, formData.rememberMe);
+      toast({
+        title: "Sign In Successful",
+        description: "Welcome back to GetawayHub!",
+      });
+      setLocation(redirect || "/");
+    } catch (error) {
+      toast({
+        title: "Sign In Failed",
+        description: getFirebaseErrorMessage(error, "Unable to sign in. Please try again."),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOAuthSignIn = async (provider: "google" | "facebook") => {
+    setIsSubmitting(true);
+    try {
+      if (provider === "google") {
+        await signInWithGoogle();
+      } else {
+        await signInWithFacebook();
+      }
+      toast({
+        title: "Sign In Successful",
+        description: "Welcome back to GetawayHub!",
+      });
+      setLocation(redirect || "/");
+    } catch (error) {
+      toast({
+        title: "Sign In Failed",
+        description: getFirebaseErrorMessage(error, "Unable to sign in. Please try again."),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (!formData.email) {
+      toast({
+        title: "Email required",
+        description: "Enter your email address first, then click Forgot password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await resetPassword(formData.email);
+      toast({
+        title: "Password reset email sent",
+        description: "Check your inbox for a link to reset your password.",
+      });
+    } catch (error) {
+      toast({
+        title: "Unable to send reset email",
+        description: getFirebaseErrorMessage(error, "Please try again later."),
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -70,6 +145,9 @@ export default function SignIn() {
                   className="pl-10"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                  autoComplete="email"
+                  disabled={isSubmitting}
                   data-testid="input-email"
                 />
               </div>
@@ -86,6 +164,9 @@ export default function SignIn() {
                   className="pl-10 pr-10"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  autoComplete="current-password"
+                  disabled={isSubmitting}
                   data-testid="input-password"
                 />
                 <button
@@ -104,27 +185,34 @@ export default function SignIn() {
                 <Checkbox
                   id="remember"
                   checked={formData.rememberMe}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setFormData({ ...formData, rememberMe: checked as boolean })
                   }
+                  disabled={isSubmitting}
                   data-testid="checkbox-remember"
                 />
                 <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
                   Remember me
                 </Label>
               </div>
-              <a
-                href="#"
+              <button
+                type="button"
+                onClick={handleForgotPassword}
                 className="text-sm text-primary hover:underline"
                 data-testid="link-forgot-password"
               >
                 Forgot password?
-              </a>
+              </button>
             </div>
 
-            {/* Mock sign-in — always succeeds */}
-            <Button type="submit" className="w-full" size="lg" data-testid="button-signin">
-              Sign In
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={isSubmitting}
+              data-testid="button-signin"
+            >
+              {isSubmitting ? "Signing In..." : "Sign In"}
             </Button>
 
             <div className="relative my-6">
@@ -140,7 +228,8 @@ export default function SignIn() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => console.log("Google sign in")}
+                onClick={() => handleOAuthSignIn("google")}
+                disabled={isSubmitting}
                 data-testid="button-google"
               >
                 <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
@@ -166,7 +255,8 @@ export default function SignIn() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => console.log("Facebook sign in")}
+                onClick={() => handleOAuthSignIn("facebook")}
+                disabled={isSubmitting}
                 data-testid="button-facebook"
               >
                 <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
@@ -182,7 +272,6 @@ export default function SignIn() {
                 href="/signup"
                 onClick={(e) => {
                   e.preventDefault();
-                  const redirect = new URLSearchParams(window.location.search).get("redirect");
                   setLocation(redirect ? `/signup?redirect=${encodeURIComponent(redirect)}` : "/signup");
                 }}
                 className="text-primary font-medium hover:underline"

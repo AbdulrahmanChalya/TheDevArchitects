@@ -1,50 +1,56 @@
 import { initializeApp } from "firebase/app";
-// import { getAnalytics } from "firebase/analytics";
 import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+import type { GenerativeModel } from "firebase/ai";
 import { vacationResponseSchema } from "./schema/vacationResponse";
 import { VacationPackage } from "types/vacation";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-
 const firebaseConfig = {
-  apiKey: process.env.VITE_API_KEY,
-  authDomain: process.env.VITE_AUTH_DOMAIN,
-  projectId: process.env.VITE_PROJECT_ID,
-  storageBucket: process.env.VITE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_APP_ID,
-  measurementId: process.env.VITE_MEASUREMENT_ID,
-}; 
+  apiKey: process.env.VITE_API_KEY || process.env.FIREBASE_API_KEY,
+  authDomain: process.env.VITE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.VITE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.VITE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId:
+    process.env.VITE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_APP_ID || process.env.FIREBASE_APP_ID,
+  measurementId: process.env.VITE_MEASUREMENT_ID || process.env.FIREBASE_MEASUREMENT_ID,
+};
 
 let packages: VacationPackage[] = [];
 let loading = false;
-let error = null;
+let error: string | null = null;
 
-// if (!firebaseConfig.apiKey) {
-//   throw new Error(
-//     "VITE_API_KEY is missing. Check your .env file in the frontend project root."
-//   );
-// }
+let model: GenerativeModel | null = null;
 
-// Initialize Firebase
-const firebaseApp = initializeApp(firebaseConfig);
+function getModel(): GenerativeModel | null {
+  if (!firebaseConfig.apiKey) {
+    return null;
+  }
 
-// Initialize the Gemini Developer API backend service
-const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+  if (!model) {
+    const firebaseApp = initializeApp(firebaseConfig);
+    const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+    model = getGenerativeModel(ai, {
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: vacationResponseSchema,
+      },
+    });
+  }
 
-// Create a `GenerativeModel` instance with a model that supports your use case
-export const model = getGenerativeModel(ai, {
-  model: "gemini-2.5-flash",
-  generationConfig: {
-    responseMimeType: "application/json",
-    responseSchema: vacationResponseSchema,
-  },
-});
+  return model;
+}
 
-export async function handleGenerate(response) {
-    try {
-      const prompt = `
+export async function handleGenerate(response: unknown) {
+  const generativeModel = getModel();
+  if (!generativeModel) {
+    console.warn("Skipping AI package generation: Firebase API key is not configured.");
+    return;
+  }
+
+  loading = true;
+  try {
+    const prompt = `
       You are a vacation package planner. 
       User details:
       •⁠  ⁠Number of people: ${2}
@@ -77,30 +83,26 @@ export async function handleGenerate(response) {
       ${JSON.stringify(response)}
       `;
 
-      const result = await model.generateContent(prompt);
+    const result = await generativeModel.generateContent(prompt);
+    const jsonText = result.response.text();
+    const data = JSON.parse(jsonText) as {
+      vacationPackages?: VacationPackage[];
+    };
 
-      // When using responseSchema, Firebase AI Logic returns structured data
-      // in result.response
-      // Adjust this depending on the exact SDK shape; some builds use result.response.candidates[0].content...
-      // Here we assume result.response already matches the schema:
-      // result.response.text() will be a JSON string that matches your schema.
-      const jsonText = result.response.text();
-      const data = JSON.parse(jsonText) as {
-        vacationPackages?: VacationPackage[];
-      };
+    console.log("AI response ->", data);
 
-      console.log("AI response ->", data);
-
-      if (!data || !data.vacationPackages) {
-        throw new Error("No vacationPackages field returned from model.");
-      }
-
-      packages = data.vacationPackages;
-    } catch (err: any) {
-      console.error(err);
-      error = err.message || "Something went wrong while generating packages.";
-    } finally {
-      loading = false;
+    if (!data?.vacationPackages) {
+      throw new Error("No vacationPackages field returned from model.");
     }
-  }
 
+    packages = data.vacationPackages;
+  } catch (err: unknown) {
+    console.error(err);
+    error =
+      err instanceof Error
+        ? err.message
+        : "Something went wrong while generating packages.";
+  } finally {
+    loading = false;
+  }
+}

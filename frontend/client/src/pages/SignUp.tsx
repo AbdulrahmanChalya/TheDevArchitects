@@ -1,9 +1,8 @@
-// SignUp (/signup) - mock registration.
+// SignUp (/signup) - Firebase email/password and OAuth registration.
 //
-// Validates password match and terms checkbox (stricter than SignIn).
-// On success, redirects to /signin (preserving ?redirect if present).
-// No account is persisted.
-import { useState } from "react";
+// Validates password match and terms checkbox. On success, signs the user in
+// and redirects to ?redirect or home.
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Plane, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,25 +11,35 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { getFirebaseErrorMessage } from "@/lib/firebaseErrors";
 
 export default function SignUp() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, loading, signUpWithEmail, signInWithGoogle, signInWithFacebook } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
-    agreeToTerms: false
+    agreeToTerms: false,
   });
 
-  // Validate form, mock create account, then send user to /signin (keeps ?redirect).
-  const handleSubmit = (e: React.FormEvent) => {
+  const redirect = new URLSearchParams(window.location.search).get("redirect");
+
+  useEffect(() => {
+    if (!loading && user) {
+      setLocation(redirect || "/");
+    }
+  }, [loading, user, redirect, setLocation]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Client-side checks only: passwords must match and terms must be agreed.
+
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Passwords don't match",
@@ -49,18 +58,47 @@ export default function SignUp() {
       return;
     }
 
-    console.log("Sign up attempted with:", formData);
-    
-    // TODO: remove mock functionality - Replace with actual registration
-    toast({
-      title: "Account Created!",
-      description: "Welcome to GetawayHub! Redirecting to sign in...",
-    });
-    
-    const redirect = new URLSearchParams(window.location.search).get("redirect");
-    setTimeout(() => {
-      setLocation(redirect ? `/signin?redirect=${encodeURIComponent(redirect)}` : "/signin");
-    }, 1500);
+    setIsSubmitting(true);
+    try {
+      await signUpWithEmail(formData.email, formData.password, formData.fullName);
+      toast({
+        title: "Account Created!",
+        description: "Welcome to GetawayHub!",
+      });
+      setLocation(redirect || "/");
+    } catch (error) {
+      toast({
+        title: "Sign Up Failed",
+        description: getFirebaseErrorMessage(error, "Unable to create account. Please try again."),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOAuthSignUp = async (provider: "google" | "facebook") => {
+    setIsSubmitting(true);
+    try {
+      if (provider === "google") {
+        await signInWithGoogle();
+      } else {
+        await signInWithFacebook();
+      }
+      toast({
+        title: "Account Created!",
+        description: "Welcome to GetawayHub!",
+      });
+      setLocation(redirect || "/");
+    } catch (error) {
+      toast({
+        title: "Sign Up Failed",
+        description: getFirebaseErrorMessage(error, "Unable to sign up. Please try again."),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -92,6 +130,8 @@ export default function SignUp() {
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   required
+                  autoComplete="name"
+                  disabled={isSubmitting}
                   data-testid="input-fullname"
                 />
               </div>
@@ -109,6 +149,8 @@ export default function SignUp() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                  autoComplete="email"
+                  disabled={isSubmitting}
                   data-testid="input-email"
                 />
               </div>
@@ -126,7 +168,9 @@ export default function SignUp() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
-                  minLength={8}
+                  minLength={6}
+                  autoComplete="new-password"
+                  disabled={isSubmitting}
                   data-testid="input-password"
                 />
                 <button
@@ -152,6 +196,9 @@ export default function SignUp() {
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   required
+                  minLength={6}
+                  autoComplete="new-password"
+                  disabled={isSubmitting}
                   data-testid="input-confirm-password"
                 />
                 <button
@@ -169,10 +216,11 @@ export default function SignUp() {
               <Checkbox
                 id="terms"
                 checked={formData.agreeToTerms}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setFormData({ ...formData, agreeToTerms: checked as boolean })
                 }
                 className="mt-1"
+                disabled={isSubmitting}
                 data-testid="checkbox-terms"
               />
               <Label htmlFor="terms" className="text-sm font-normal leading-relaxed cursor-pointer">
@@ -187,9 +235,14 @@ export default function SignUp() {
               </Label>
             </div>
 
-            {/* Mock sign-up — validates form, then sends user to sign-in */}
-            <Button type="submit" className="w-full" size="lg" data-testid="button-signup">
-              Create Account
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={isSubmitting}
+              data-testid="button-signup"
+            >
+              {isSubmitting ? "Creating Account..." : "Create Account"}
             </Button>
 
             <div className="relative my-6">
@@ -205,7 +258,8 @@ export default function SignUp() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => console.log("Google sign up")}
+                onClick={() => handleOAuthSignUp("google")}
+                disabled={isSubmitting}
                 data-testid="button-google"
               >
                 <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
@@ -231,7 +285,8 @@ export default function SignUp() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => console.log("Facebook sign up")}
+                onClick={() => handleOAuthSignUp("facebook")}
+                disabled={isSubmitting}
                 data-testid="button-facebook"
               >
                 <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
@@ -247,7 +302,7 @@ export default function SignUp() {
                 href="/signin"
                 onClick={(e) => {
                   e.preventDefault();
-                  setLocation("/signin");
+                  setLocation(redirect ? `/signin?redirect=${encodeURIComponent(redirect)}` : "/signin");
                 }}
                 className="text-primary font-medium hover:underline"
                 data-testid="link-signin"
