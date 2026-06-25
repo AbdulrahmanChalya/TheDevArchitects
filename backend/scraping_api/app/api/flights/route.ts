@@ -71,7 +71,6 @@ export async function GET(req: NextRequest) {
       return_offers: false,
     } as any);
 
-    console.log("Duffel response:", JSON.stringify(offerRequest.data, null, 2));
 
     const offersResponse = await duffel.offers.list({
       offer_request_id: offerRequest.data.id,

@@ -178,7 +178,7 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json();
-    console.log("Google Places API response:", data);
+  
     const places = data?.places || [];
 
     const attractions = normalizeGoogleAttractions(places, apiKey);

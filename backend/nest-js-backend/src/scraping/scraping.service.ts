@@ -49,6 +49,7 @@ export class ScrapingService {
       const endDate = query.endDate || '';
       const people = Number(query.people || 1);
       const rooms = Number(query.rooms || 1);
+      const countryCode = query.countryCode || '';
 
       const attractionsParams = {
         city,
@@ -59,6 +60,7 @@ export class ScrapingService {
 
       const hotelsParams = {
         city,
+        countryCode,
         startDate,
         endDate,
         people,
