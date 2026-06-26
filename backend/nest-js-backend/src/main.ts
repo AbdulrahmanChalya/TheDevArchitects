@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 
 loadEnv({ path: resolve(__dirname, '../.env') });
 loadEnv({ path: resolve(__dirname, '../../../frontend/.env') });
+loadEnv({ path: resolve(process.cwd(), '.env') });
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
