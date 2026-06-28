@@ -1,5 +1,7 @@
 import { BadGatewayException, HttpException, Injectable } from '@nestjs/common';
 import { handleGenerate } from 'firebaseConfig';
+import { saveVacationModelInput } from './input-data-writer';
+import { normalizeForVacationModel } from './vacation-input-normalizer';
 
 @Injectable()
 /*
@@ -86,6 +88,11 @@ export class ScrapingService {
         hotels,
         flights,
       };
+
+      // Store clean model inputs so I can use it for finetuning. will remove after done.
+      const vacationModelInput = normalizeForVacationModel(scrapedResponse, query);
+      const savedInputPath = await saveVacationModelInput(vacationModelInput);
+      console.log(`Saved normalized vacation model input: ${savedInputPath}`);
 
       // function call to generate vacation packages based on scraped data
       handleGenerate(scrapedResponse);
