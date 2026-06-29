@@ -172,9 +172,10 @@ export default function TripPackageDetails() {
 
             <div className="mb-8">
               <DestinationMap
-                destinationId={pkg.id}
                 destinationName={pkg.name}
                 country={pkg.country}
+                hotelName={hotel?.name}
+                attractions={pkg.attractions}
               />
             </div>
 
