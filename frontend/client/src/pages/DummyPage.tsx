@@ -13,12 +13,13 @@ const DummyPage = () => {
   const searchParams = new URLSearchParams({
     originAirport: "JFK",
     destinationAirport: "CDG",
-    people: "2",
+    people: "1",
     city: "Paris",
     countryCode: "FR",
     startDate: "2026-07-01",
     endDate: "2026-07-30",
     rooms: "1",
+    budgetCad: "6000",
   });
 
   // Call the backend search endpoint and log whatever comes back.

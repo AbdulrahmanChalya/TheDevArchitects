@@ -1,6 +1,4 @@
 import { BadGatewayException, HttpException, Injectable } from '@nestjs/common';
-import { handleGenerate } from 'firebaseConfig';
-
 @Injectable()
 /*
  * Forwards query params to the scraper service and combines 
@@ -86,9 +84,6 @@ export class ScrapingService {
         hotels,
         flights,
       };
-
-      // function call to generate vacation packages based on scraped data
-      handleGenerate(scrapedResponse);
 
       return scrapedResponse;
     }
