@@ -23,7 +23,7 @@ const DEFAULT_USD_TO_CAD_RATE = 1.37;
 
 /**
  * Converts the raw combined scraper payload into the stable input shape used by
- * the vacation-package model.
+ * the vacation-package AI.
  */
 export function normalizeForVacationModel(
   scrapedResponse: ScrapedResponse,
@@ -94,15 +94,23 @@ export function normalizeForVacationModel(
           currency: TARGET_CURRENCY,
         };
       }),
-      attractions: attractions.map((attraction) => ({
-        id: attraction.id,
-        name: attraction.name,
-        rating: attraction.ratingScore ?? null,
-        reviewCount: attraction.reviewCount ?? null,
-        address: attraction.address ?? null,
-        pricePerPerson: 0,
-        currency: TARGET_CURRENCY,
-      })),
+      attractions: attractions.map((attraction) => {
+        const pricePerPerson = convertToCad(
+          attraction.pricePerPerson ?? attraction.price,
+          attraction.currency,
+          usdToCadRate,
+        );
+
+        return {
+          id: attraction.id,
+          name: attraction.name,
+          rating: attraction.ratingScore ?? null,
+          reviewCount: attraction.reviewCount ?? null,
+          address: attraction.address ?? null,
+          pricePerPerson,
+          currency: TARGET_CURRENCY,
+        };
+      }),
     },
   };
 }
@@ -127,7 +135,7 @@ function getNights(checkin: string, checkout: string) {
 /**
  * Reads the USD to CAD conversion rate from the environment.
  *
- * Use USD_TO_CAD_RATE to control training-data generation. The fallback keeps
+ * Use USD_TO_CAD_RATE to control AI package cost conversion. The fallback keeps
  * local development usable, but production should provide an explicit rate or a
  * cached rate from a currency service.
  */
