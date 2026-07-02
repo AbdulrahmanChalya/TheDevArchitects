@@ -16,6 +16,7 @@ export interface BackendDestination {
   country: string;
   description: string;
   image: string;
+  imageUrl?: string;
   rating: number;
   reviewCount: number;
   pricePerNight: number;
@@ -62,6 +63,7 @@ export interface TripPackage {
   country: string;
   description: string;
   image: string;
+  imageUrl?: string;
   rating: number;
   reviewCount: number;
   activities: string[];
@@ -121,6 +123,7 @@ export async function fetchTripPackages(): Promise<TripPackage[]> {
         country: dest.country,
         description: dest.description,
         image: dest.image,
+        imageUrl: dest.imageUrl,
         rating: dest.rating,
         reviewCount: dest.reviewCount,
         activities: dest.activities,

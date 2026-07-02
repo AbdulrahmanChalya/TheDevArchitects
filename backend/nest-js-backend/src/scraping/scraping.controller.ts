@@ -27,6 +27,8 @@ export class ScrapingController {
       return this.scrapingService.search(query);
     }
 
-
-
+    @Get('images/place')
+    getPlaceImage(@Query() query: Record<string, any>) {
+      return this.scrapingService.callScrapingService('api/places/image', query);
+    }
 }

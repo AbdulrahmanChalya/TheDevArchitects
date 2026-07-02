@@ -34,8 +34,8 @@ import {
   computePackagePricing,
   type TripPackage,
 } from "@/lib/tripPackages";
-
-const FALLBACK_IMAGE = "/attached_assets/images/Hero_tropical_beach_scene_e5fdeadc.png";
+import { PlaceImage, PlaceImageBackground, parseDestinationLabel } from "@/components/PlaceImage";
+import { fetchLiveAttractions, fetchLiveHotels } from "@/lib/liveData";
 
 export default function TripPackageDetails() {
   // :id in the URL is the package / destination id from tripPackages.
@@ -55,6 +55,34 @@ export default function TripPackageDetails() {
       const packages = await fetchTripPackages();
       return packages.find((p) => p.id === packageId);
     },
+  });
+
+  const { data: liveAttractions } = useQuery({
+    queryKey: ["live-attractions", pkg?.name, passengers],
+    queryFn: () => fetchLiveAttractions(pkg!.name, passengers),
+    enabled: Boolean(pkg?.name),
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const { data: liveHotels } = useQuery({
+    queryKey: [
+      "live-hotels",
+      pkg?.name,
+      searchParams.get("startDate"),
+      searchParams.get("endDate"),
+      passengers,
+      searchParams.get("rooms"),
+    ],
+    queryFn: () =>
+      fetchLiveHotels({
+        city: pkg!.name,
+        startDate: searchParams.get("startDate") || undefined,
+        endDate: searchParams.get("endDate") || undefined,
+        people: passengers,
+        rooms: parseInt(searchParams.get("rooms") || "1", 10),
+      }),
+    enabled: Boolean(pkg?.name),
+    staleTime: 1000 * 60 * 15,
   });
 
   // Go back to search results with the same query string.
@@ -122,6 +150,10 @@ export default function TripPackageDetails() {
   const hotel = getCheapestHotel(pkg);
   const flight = getCheapestFlight(pkg);
   const pricing = computePackagePricing(pkg, { nights, passengers, hotel, flight });
+  const liveHotelImage =
+    liveHotels?.rooms?.find((room) => room.hotelImage)?.hotelImage ?? null;
+  const attractionsWithImages =
+    liveAttractions?.attractions?.filter((item) => item.name) ?? [];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -131,13 +163,13 @@ export default function TripPackageDetails() {
         <div className="container mx-auto px-4 md:px-6 py-8">
           <div className="max-w-5xl mx-auto">
             <div className="relative h-56 md:h-72 rounded-2xl overflow-hidden mb-8 shadow-lg">
-              <img
-                src={`/attached_assets/images/${pkg.image}`}
-                alt={pkg.name}
+              <PlaceImage
+                name={pkg.name}
+                country={pkg.country}
+                imageUrl={pkg.imageUrl}
+                type="destination"
+                alt={`${pkg.name}, ${pkg.country}`}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = FALLBACK_IMAGE;
-                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
               <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
@@ -194,6 +226,13 @@ export default function TripPackageDetails() {
                   <CardContent className="space-y-3">
                     {hotel ? (
                       <>
+                        {liveHotelImage && (
+                          <img
+                            src={liveHotelImage}
+                            alt={hotel.name}
+                            className="w-full h-40 object-cover rounded-lg"
+                          />
+                        )}
                         <div className="flex items-start justify-between gap-4">
                           <p className="font-semibold">{hotel.name}</p>
                           <span className="flex items-center gap-1 text-sm whitespace-nowrap">
@@ -263,10 +302,36 @@ export default function TripPackageDetails() {
                     <span className="text-sm font-semibold text-green-600">Included</span>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {pkg.attractions.length > 0 ? (
+                    {attractionsWithImages.length > 0 ? (
+                      attractionsWithImages.map((attraction) => (
+                        <div key={attraction.id} className="flex items-start gap-3 text-sm">
+                          {attraction.image ? (
+                            <img
+                              src={attraction.image}
+                              alt={attraction.name ?? "Attraction"}
+                              className="h-16 w-16 rounded-lg object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          )}
+                          <div>
+                            <p className="font-medium">{attraction.name}</p>
+                            {attraction.address && (
+                              <p className="text-muted-foreground">{attraction.address}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : pkg.attractions.length > 0 ? (
                       pkg.attractions.map((attraction) => (
-                        <div key={attraction.name} className="flex items-start gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div key={attraction.name} className="flex items-start gap-3 text-sm">
+                          <PlaceImage
+                            name={attraction.name}
+                            country={pkg.name}
+                            type="attraction"
+                            alt={attraction.name}
+                            className="h-16 w-16 rounded-lg object-cover flex-shrink-0"
+                          />
                           <div>
                             <p className="font-medium">{attraction.name}</p>
                             <p className="text-muted-foreground">{attraction.description}</p>
