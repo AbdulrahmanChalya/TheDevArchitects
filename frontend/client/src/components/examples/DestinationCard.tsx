@@ -9,7 +9,6 @@ export default function DestinationCardExample() {
         name="Paris"
         country="France"
         description="Fall in love with the City of Light, home to world-class art, cuisine, and romance."
-        image="Paris_France_Eiffel_Tower_01a872e8.png"
         rating={4.9}
         reviewCount={3500}
         pricePerNight={220}

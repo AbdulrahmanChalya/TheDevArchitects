@@ -24,8 +24,7 @@ import {
   getBackendSearchQueryKey,
   searchParamsFromUrl,
 } from "@/lib/backendSearch";
-
-const FALLBACK_IMAGE = "/attached_assets/images/Hero_tropical_beach_scene_e5fdeadc.png";
+import { PlaceImage } from "@/components/PlaceImage";
 
 export default function SearchResults() {
   const [, setLocation] = useLocation();
@@ -166,13 +165,13 @@ export default function SearchResults() {
                     className="overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col"
                   >
                     <div className="relative h-48 overflow-hidden">
-                      <img
-                        src={`/attached_assets/images/${pkg.image}`}
-                        alt={pkg.name}
+                      <PlaceImage
+                        name={pkg.name}
+                        country={pkg.country}
+                        imageUrl={pkg.imageUrl}
+                        type="destination"
+                        alt={`${pkg.name}, ${pkg.country}`}
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          e.currentTarget.src = FALLBACK_IMAGE;
-                        }}
                       />
                       <Badge className="absolute top-3 left-3 bg-background/90 text-foreground border-0 shadow">
                         {nights} nights

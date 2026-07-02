@@ -10,6 +10,7 @@ import {
   Waves,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { PlaceImageBackground, parseDestinationLabel } from "@/components/PlaceImage";
 
 interface Activity {
   name: string;
@@ -20,7 +21,7 @@ interface Activity {
 interface RecommendationCardProps {
   destination: string;
   tagline: string;
-  image: string;
+  imageUrl?: string;
   activities: Activity[];
   bestTime: string;
   estimatedBudget: string;
@@ -45,21 +46,24 @@ const getActivityIcon = (iconName: string) => {
 export default function RecommendationCard({
   destination,
   tagline,
-  image,
+  imageUrl,
   activities,
   bestTime,
   estimatedBudget,
 }: RecommendationCardProps) {
+  const imageLookup = parseDestinationLabel(destination);
+
   return (
     <Card
       className="overflow-hidden hover-elevate transition-all duration-300"
       data-testid={`card-recommendation-${destination.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
     >
-      <div
-        className="h-48 bg-cover bg-center relative"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url(${image})`,
-        }}
+      <PlaceImageBackground
+        name={imageLookup.name}
+        country={imageLookup.country}
+        imageUrl={imageUrl}
+        type="destination"
+        className="h-48"
       >
         <div className="absolute bottom-4 left-4 right-4">
           <h3 className="text-xl font-bold text-white mb-1" data-testid="text-destination">
@@ -69,7 +73,7 @@ export default function RecommendationCard({
             {tagline}
           </p>
         </div>
-      </div>
+      </PlaceImageBackground>
 
       <CardContent className="p-6">
         <div className="space-y-4">
