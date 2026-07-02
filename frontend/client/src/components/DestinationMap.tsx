@@ -9,7 +9,7 @@ type Attraction = {
 
 type DestinationMapProps = {
   destinationName: string;
-  country: string;
+  country?: string;
   hotelName?: string;
   attractions?: Attraction[];
 };
@@ -66,6 +66,10 @@ async function geocodeDestination(
   }
 }
 
+function formatLocationQuery(...parts: Array<string | undefined>) {
+  return parts.map((part) => part?.trim()).filter(Boolean).join(", ");
+}
+
 function cleanAttractionName(name: string) {
   return name
     .replace(/^Visit the\s+/i, "")
@@ -81,7 +85,7 @@ async function searchPointOfInterest(
   accessToken: string,
   category: "hotel" | "attraction",
 ): Promise<{ longitude: number; latitude: number } | null> {
-  const query = `${name}, ${destinationName}, ${country}`;
+  const query = formatLocationQuery(name, destinationName, country);
 
   try {
     const response = await fetch(
@@ -159,7 +163,7 @@ export default function DestinationMap({
       setStatusMessage("Loading destination map...");
 
       const destinationCoordinates = await geocodeDestination(
-        `${destinationName}, ${country}`,
+        formatLocationQuery(destinationName, country),
         accessToken,
       );
 
@@ -203,7 +207,7 @@ export default function DestinationMap({
         ])
         .setPopup(
           new mapboxgl.Popup({ offset: 25 }).setHTML(
-            `<strong>${destinationName}</strong><br />${country}`,
+            `<strong>${destinationName}</strong>${country ? `<br />${country}` : ""}`,
           ),
         )
         .addTo(map);

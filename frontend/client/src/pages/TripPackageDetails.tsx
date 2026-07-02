@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import DestinationMap from "@/components/DestinationMap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,7 @@ export default function TripPackageDetails() {
   );
   const pkg = selectedPackage ?? generatedPackage;
   const isBuilding = isLoading || (isFetching && !pkg);
+  const mapCountry = formParams.countryCode || undefined;
 
   const handleCancel = () => {
     const query = searchParams.toString();
@@ -164,6 +166,15 @@ export default function TripPackageDetails() {
             </div>
 
             <p className="text-muted-foreground mb-8">{pkg.comments}</p>
+
+            <div className="mb-8">
+              <DestinationMap
+                destinationName={pkg.destinationCity}
+                country={mapCountry}
+                hotelName={pkg.hotel.name}
+                attractions={pkg.attractionsPlan.attractions}
+              />
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
