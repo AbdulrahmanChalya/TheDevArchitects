@@ -15,8 +15,8 @@ const DummyPage = () => {
     people: "1",
     city: "Paris",
     countryCode: "FR",
-    startDate: "2026-07-01",
-    endDate: "2026-07-05",
+    startDate: "2026-07-05",
+    endDate: "2026-07-10",
     rooms: "1",
     budgetCad: "6000",
   });

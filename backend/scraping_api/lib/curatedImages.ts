@@ -1,4 +1,5 @@
-import destinations from "../../destinations.json";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 
 export type CuratedDestination = {
   id: string;
@@ -7,7 +8,23 @@ export type CuratedDestination = {
   imageUrl?: string;
 };
 
-const catalog = destinations as CuratedDestination[];
+const catalog = loadDestinationCatalog();
+
+function loadDestinationCatalog(): CuratedDestination[] {
+  const candidates = [
+    path.resolve(process.cwd(), "destinations.json"),
+    path.resolve(process.cwd(), "../destinations.json"),
+  ];
+
+  for (const filePath of candidates) {
+    if (existsSync(filePath)) {
+      return JSON.parse(readFileSync(filePath, "utf8")) as CuratedDestination[];
+    }
+  }
+
+  console.warn("destinations.json not found for curated destination images.");
+  return [];
+}
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
