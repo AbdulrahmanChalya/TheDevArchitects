@@ -1,6 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MapPin, Users, DollarSign, Calendar, Bed, Search, Plane, PlaneTakeoff, PlaneLanding } from "lucide-react";
+import {
+  MapPin,
+  Users,
+  DollarSign,
+  Calendar,
+  Bed,
+  Search,
+  Plane,
+  PlaneTakeoff,
+  PlaneLanding,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,48 +30,76 @@ interface SearchBarProps {
   variant?: "hero" | "compact"; // "hero" on Home, "compact" on SearchResults
 }
 
-// Hardcoded autocomplete lists (TODO: replace with API)
-const DESTINATION_SUGGESTIONS = [
-  "Paris, France",
-  "Tokyo, Japan",
-  "Bali, Indonesia",
-  "New York, USA",
-  "Santorini, Greece",
-  "Swiss Alps, Switzerland",
-  "Machu Picchu, Peru",
-  "Amalfi Coast, Italy",
-  "London, UK",
-  "Dubai, UAE",
-  "Barcelona, Spain",
-  "Rome, Italy"
-];
+interface Airport {
+  code: string;
+  name: string;
+  city: string;
+  country: string;
+  lat: number;
+  lng: number;
+}
 
-const AIRPORT_SUGGESTIONS = [
-  "JFK - John F. Kennedy International Airport (New York)",
-  "LAX - Los Angeles International Airport (Los Angeles)",
-  "LHR - Heathrow Airport (London)",
-  "CDG - Charles de Gaulle Airport (Paris)",
-  "NRT - Narita International Airport (Tokyo)",
-  "DXB - Dubai International Airport (Dubai)",
-  "SIN - Singapore Changi Airport (Singapore)",
-  "YYZ - Toronto Pearson International Airport (Toronto)",
-  "SFO - San Francisco International Airport (San Francisco)",
-  "ORD - O'Hare International Airport (Chicago)"
-];
+interface DestinationSuggestion {
+  city: string;
+  country: string;
+  countryCode: string;
+  label: string;
+  placeId?: string;
+  description?: string;
+}
 
-// Lat/lng for each airport code — used when geolocation API fails
-const AIRPORT_LOCATIONS = {
-  "JFK": { lat: 40.6413, lng: -73.7781, name: "JFK - John F. Kennedy International Airport (New York)" },
-  "LAX": { lat: 33.9425, lng: -118.4081, name: "LAX - Los Angeles International Airport (Los Angeles)" },
-  "LHR": { lat: 51.4700, lng: -0.4543, name: "LHR - Heathrow Airport (London)" },
-  "CDG": { lat: 49.0097, lng: 2.5479, name: "CDG - Charles de Gaulle Airport (Paris)" },
-  "NRT": { lat: 35.7720, lng: 140.3929, name: "NRT - Narita International Airport (Tokyo)" },
-  "DXB": { lat: 25.2532, lng: 55.3657, name: "DXB - Dubai International Airport (Dubai)" },
-  "SIN": { lat: 1.3644, lng: 103.9915, name: "SIN - Singapore Changi Airport (Singapore)" },
-  "YYZ": { lat: 43.6777, lng: -79.6248, name: "YYZ - Toronto Pearson International Airport (Toronto)" },
-  "SFO": { lat: 37.6213, lng: -122.3790, name: "SFO - San Francisco International Airport (San Francisco)" },
-  "ORD": { lat: 41.9742, lng: -87.9073, name: "ORD - O'Hare International Airport (Chicago)" }
-};
+function normalizeCity(value: string) {
+  return value
+    .split(",")[0]
+    .trim()
+    .toLowerCase()
+    .replace(/\s+city$/, "");
+}
+
+function formatAirportLabel(airport: Airport) {
+  return `${airport.code} - ${airport.name} (${airport.city})`;
+}
+
+const backendBase = () => import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+
+// City autocomplete is intentionally API-backed only; no local destination JSON fallback.
+async function fetchGoogleCitySuggestions(input: string): Promise<DestinationSuggestion[]> {
+  if (input.trim().length < 2) return [];
+
+  const params = new URLSearchParams({
+    input: input.trim(),
+    languageCode: "en",
+  });
+  const response = await fetch(`${backendBase()}/api/places/autocomplete?${params.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(`City autocomplete failed (${response.status})`);
+  }
+
+  const data = await response.json();
+  return (data.suggestions ?? []).map((suggestion: any) => ({
+    city: suggestion.city,
+    country: suggestion.country || "",
+    countryCode: "",
+    label: suggestion.label || suggestion.city,
+    placeId: suggestion.placeId,
+    description: suggestion.description,
+  }));
+}
+
+async function fetchGooglePlaceDetails(placeId: string) {
+  const params = new URLSearchParams({ placeId });
+  const response = await fetch(`${backendBase()}/api/places/details?${params.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(`Place details failed (${response.status})`);
+  }
+
+  return response.json() as Promise<{
+    country?: string;
+    countryCode?: string;
+  }>;
+}
 
 export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const [, setLocation] = useLocation();
@@ -71,7 +110,8 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   // people/rooms are strings because they mirror URL params; travelers
   // below holds the numeric counts that update people/rooms on change.
   const [searchData, setSearchData] = useState({
-    destination: "",       // e.g. "Paris, France"
+    destination: "",       // e.g. "Paris"
+    countryCode: "",
     departureAirport: "",  // full label string from suggestions
     arrivalAirport: "",
     people: "",            // total guests as string (adults + children)
@@ -102,12 +142,37 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
   const [showDepartureAirportSuggestions, setShowDepartureAirportSuggestions] = useState(false);
   const [showArrivalAirportSuggestions, setShowArrivalAirportSuggestions] = useState(false);
-  const [filteredDestinations, setFilteredDestinations] = useState(DESTINATION_SUGGESTIONS);
-  const [filteredDepartureAirports, setFilteredDepartureAirports] = useState(AIRPORT_SUGGESTIONS);
-  const [filteredArrivalAirports, setFilteredArrivalAirports] = useState(AIRPORT_SUGGESTIONS);
+  const [airports, setAirports] = useState<Airport[]>([]);
+  const [filteredDestinations, setFilteredDestinations] = useState<DestinationSuggestion[]>([]);
+  const [filteredDepartureAirports, setFilteredDepartureAirports] = useState<string[]>([]);
+  const [filteredArrivalAirports, setFilteredArrivalAirports] = useState<string[]>([]);
+  const [destinationAutocompleteStatus, setDestinationAutocompleteStatus] =
+    useState<"idle" | "loading">("idle");
   const destinationRef = useRef<HTMLDivElement>(null);
   const departureAirportRef = useRef<HTMLDivElement>(null);
   const arrivalAirportRef = useRef<HTMLDivElement>(null);
+
+  const airportLabels = airports.map(formatAirportLabel);
+
+  // Airport suggestions still come from coded airport data because flight search needs IATA codes.
+  const getArrivalAirportsForDestination = (destination: string) => {
+    const target = normalizeCity(destination);
+    if (!target) return [];
+
+    return airports
+      .filter((airport) => {
+        const airportCity = normalizeCity(airport.city);
+        return airportCity === target || airportCity.includes(target) || target.includes(airportCity);
+      })
+      .map(formatAirportLabel);
+  };
+
+  const hasExactAirportCityMatch = (destination: string) => {
+    const target = normalizeCity(destination);
+    if (!target) return false;
+
+    return airports.some((airport) => normalizeCity(airport.city) === target);
+  };
 
   // Close open suggestion panels on outside click.
   useEffect(() => {
@@ -133,6 +198,86 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSearchData() {
+      try {
+        // Keep airport data local for now; Google city places do not provide Duffel-ready IATA codes.
+        const airportsResponse = await fetch("/backend/airports.json");
+
+        if (!airportsResponse.ok) {
+          throw new Error("Airport autocomplete data request failed.");
+        }
+
+        const loadedAirports = (await airportsResponse.json()) as Airport[];
+        if (cancelled) return;
+
+        const loadedAirportLabels = loadedAirports.map(formatAirportLabel);
+
+        setAirports(loadedAirports);
+        setFilteredDepartureAirports(loadedAirportLabels);
+        setFilteredArrivalAirports(loadedAirportLabels);
+      } catch (error) {
+        console.warn("Could not load airport autocomplete data:", error);
+      }
+    }
+
+    void loadSearchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!searchData.destination || airports.length === 0) return;
+
+    const matchingArrivalAirports = getArrivalAirportsForDestination(searchData.destination);
+    if (matchingArrivalAirports.length > 0) {
+      setFilteredArrivalAirports(matchingArrivalAirports);
+    }
+  }, [airports, searchData.destination]);
+
+  useEffect(() => {
+    const input = searchData.destination.trim();
+
+    if (input.length < 2) {
+      setDestinationAutocompleteStatus("idle");
+      setFilteredDestinations([]);
+      return;
+    }
+
+    let cancelled = false;
+    setDestinationAutocompleteStatus("loading");
+    setFilteredDestinations([]);
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        const googleSuggestions = await fetchGoogleCitySuggestions(input);
+        if (cancelled) return;
+
+        if (googleSuggestions.length > 0) {
+          setFilteredDestinations(googleSuggestions);
+          setDestinationAutocompleteStatus("idle");
+          return;
+        }
+      } catch (error) {
+        console.warn("Google city autocomplete unavailable:", error);
+      }
+
+      if (!cancelled) {
+        setFilteredDestinations([]);
+        setDestinationAutocompleteStatus("idle");
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [searchData.destination]);
+
   // Safely parse a date string from the URL; return undefined for empty or invalid values.
   const parseUrlDate = (value: string | null): Date | undefined => {
     if (!value) return undefined;
@@ -146,6 +291,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     const urlParams = new URLSearchParams(window.location.search);
     
     const destination = urlParams.get('destination');
+    const countryCode = urlParams.get('countryCode');
     const departureAirport = urlParams.get('departureAirport');
     const arrivalAirport = urlParams.get('arrivalAirport');
     const people = urlParams.get('people');
@@ -157,6 +303,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     if (destination || departureAirport || arrivalAirport || people || budget || startDate || endDate || rooms) {
       setSearchData({
         destination: destination || "",
+        countryCode: countryCode || "",
         departureAirport: departureAirport || "",
         arrivalAirport: arrivalAirport || "",
         people: people || "",
@@ -233,17 +380,16 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
         } catch (error) {
           console.error("Error fetching nearby airports:", error);
           
-          // Fallback to local calculation
-          const airportsWithDistance = Object.entries(AIRPORT_LOCATIONS).map(([code, airport]) => ({
-            code,
-            name: airport.name,
+          // Fallback to local airport data.
+          const airportsWithDistance = airports.map((airport) => ({
+            label: formatAirportLabel(airport),
             distance: calculateDistance(latitude, longitude, airport.lat, airport.lng)
           }));
-          
+
           const nearby = airportsWithDistance
             .sort((a, b) => a.distance - b.distance)
             .slice(0, 5)
-            .map(airport => airport.name);
+            .map(airport => airport.label);
           
           setNearbyAirports(nearby);
           setFilteredDepartureAirports(nearby);
@@ -259,8 +405,8 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
           alert("Unable to get your location. Please try again or select airports manually.");
         }
         
-        // Fallback to all airports
-        setFilteredDepartureAirports(AIRPORT_SUGGESTIONS);
+        // Fallback to all loaded airports
+        setFilteredDepartureAirports(airportLabels);
       },
       {
         enableHighAccuracy: false,
@@ -379,6 +525,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
 
     const formParams = {
       destination: searchData.destination,
+      countryCode: searchData.countryCode,
       departureAirport: searchData.departureAirport,
       arrivalAirport: searchData.arrivalAirport,
       people: searchData.people,
@@ -392,6 +539,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
 
     const params = new URLSearchParams({
       destination: formParams.destination,
+      countryCode: formParams.countryCode,
       departureAirport: formParams.departureAirport,
       arrivalAirport: formParams.arrivalAirport,
       people: formParams.people,
@@ -407,23 +555,37 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     } else {
       setLocation(`/signin?redirect=${encodeURIComponent(redirect)}`);
     }
+    window.setTimeout(() => {
+      window.dispatchEvent(new Event("getawayhub-search-updated"));
+    }, 0);
     setShowDestinationSuggestions(false);
   };
 
   // Filter destination list as the user types.
   const handleDestinationChange = (value: string) => {
-    setSearchData({ ...searchData, destination: value });
-    const filtered = DESTINATION_SUGGESTIONS.filter(dest =>
-      dest.toLowerCase().includes(value.toLowerCase())
+    const matchingArrivalAirports = getArrivalAirportsForDestination(value);
+    const shouldAutoFillArrival =
+      hasExactAirportCityMatch(value) && matchingArrivalAirports.length === 1;
+
+    setSearchData({
+      ...searchData,
+      destination: value,
+      countryCode: "",
+      arrivalAirport: shouldAutoFillArrival
+        ? matchingArrivalAirports[0]
+        : searchData.arrivalAirport,
+    });
+
+    setFilteredArrivalAirports(
+      matchingArrivalAirports.length > 0 ? matchingArrivalAirports : airportLabels,
     );
-    setFilteredDestinations(filtered);
     setShowDestinationSuggestions(true);
   };
 
-  // Uses nearby list after geolocation, otherwise the default AIRPORT_SUGGESTIONS.
+  // Uses nearby list after geolocation, otherwise the loaded airport list.
   const handleDepartureAirportChange = (value: string) => {
     setSearchData({ ...searchData, departureAirport: value });
-    const baseAirports = nearbyAirports.length > 0 ? nearbyAirports : AIRPORT_SUGGESTIONS;
+    const baseAirports = nearbyAirports.length > 0 ? nearbyAirports : airportLabels;
     const filtered = baseAirports.filter(airport =>
       airport.toLowerCase().includes(value.toLowerCase())
     );
@@ -434,7 +596,9 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   // Filter arrival airport suggestions as the user types.
   const handleArrivalAirportChange = (value: string) => {
     setSearchData({ ...searchData, arrivalAirport: value });
-    const filtered = AIRPORT_SUGGESTIONS.filter(airport =>
+    const destinationAirports = getArrivalAirportsForDestination(searchData.destination);
+    const baseAirports = destinationAirports.length > 0 ? destinationAirports : airportLabels;
+    const filtered = baseAirports.filter(airport =>
       airport.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredArrivalAirports(filtered);
@@ -454,9 +618,36 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   };
 
   // Apply chosen destination and close the list.
-  const selectDestination = (destination: string) => {
-    setSearchData({ ...searchData, destination });
+  const selectDestination = async (destination: DestinationSuggestion) => {
+    const matchingArrivalAirports = getArrivalAirportsForDestination(destination.city);
+    const nextArrivalAirport =
+      matchingArrivalAirports.length === 1
+        ? matchingArrivalAirports[0]
+        : matchingArrivalAirports.includes(searchData.arrivalAirport)
+          ? searchData.arrivalAirport
+          : "";
+    let countryCode = destination.countryCode;
+
+    if (!countryCode && destination.placeId) {
+      try {
+        const details = await fetchGooglePlaceDetails(destination.placeId);
+        countryCode = details.countryCode || "";
+      } catch (error) {
+        console.warn("Could not load Google place details:", error);
+      }
+    }
+
+    setSearchData({
+      ...searchData,
+      destination: destination.city,
+      countryCode,
+      arrivalAirport: nextArrivalAirport,
+    });
+    setFilteredArrivalAirports(
+      matchingArrivalAirports.length > 0 ? matchingArrivalAirports : airportLabels,
+    );
     setShowDestinationSuggestions(false);
+    setShowArrivalAirportSuggestions(matchingArrivalAirports.length > 0);
   };
 
   const isHero = variant === "hero";
@@ -485,23 +676,45 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
               data-testid="input-destination"
             />
           </div>
-          {showDestinationSuggestions && filteredDestinations.length > 0 && (
+          {showDestinationSuggestions && searchData.destination.trim().length >= 2 && (
             <div className="absolute z-50 w-full mt-1 bg-popover border border-popover-border rounded-lg shadow-lg max-h-60 overflow-auto">
+              {destinationAutocompleteStatus === "loading" && (
+                <div className="px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Searching cities...
+                </div>
+              )}
+
               {/* Each row: set destination from suggestion */}
               {filteredDestinations.map((dest) => (
                 <button
-                  key={dest}
+                  key={dest.placeId || `${dest.city}-${dest.country}`}
                   type="button"
-                  onClick={() => selectDestination(dest)}
+                  onClick={() => void selectDestination(dest)}
                   className="w-full text-left px-4 py-2.5 hover-elevate text-sm text-foreground"
-                  data-testid={`suggestion-destination-${dest.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                  data-testid={`suggestion-destination-${dest.city.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                    {dest}
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-3 w-3 text-muted-foreground mt-1" />
+                    <span>
+                      <span className="block font-medium">{dest.label}</span>
+                      {dest.description && dest.description !== dest.label && (
+                        <span className="block text-xs text-muted-foreground">
+                          {dest.description}
+                        </span>
+                      )}
+                    </span>
                   </div>
                 </button>
               ))}
+
+              {searchData.destination.trim().length >= 2
+                && destinationAutocompleteStatus !== "loading"
+                && filteredDestinations.length === 0 && (
+                <div className="px-4 py-3 text-sm text-muted-foreground">
+                  No cities found
+                </div>
+              )}
             </div>
           )}
         </div>
