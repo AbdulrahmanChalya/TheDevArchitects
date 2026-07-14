@@ -28,6 +28,15 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface SearchBarProps {
   variant?: "hero" | "compact"; // "hero" on Home, "compact" on SearchResults
+  destinationPreset?: DestinationPreset;
+}
+
+export interface DestinationPreset {
+  city: string;
+  country: string;
+  countryCode: string;
+  airportSearchCity?: string;
+  selectionId: number;
 }
 
 interface Airport {
@@ -101,7 +110,19 @@ async function fetchGooglePlaceDetails(placeId: string) {
   }>;
 }
 
-export default function SearchBar({ variant = "hero" }: SearchBarProps) {
+async function fetchAirportSuggestions(input: string): Promise<Airport[]> {
+  const params = new URLSearchParams({ query: input.trim() });
+  const response = await fetch(`${backendBase()}/api/airports/suggestions?${params.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(`Airport suggestions failed (${response.status})`);
+  }
+
+  const data = await response.json();
+  return Array.isArray(data.airports) ? data.airports : [];
+}
+
+export default function SearchBar({ variant = "hero", destinationPreset }: SearchBarProps) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -148,13 +169,16 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
   const [filteredArrivalAirports, setFilteredArrivalAirports] = useState<string[]>([]);
   const [destinationAutocompleteStatus, setDestinationAutocompleteStatus] =
     useState<"idle" | "loading">("idle");
+  const [arrivalAirportStatus, setArrivalAirportStatus] =
+    useState<"idle" | "loading">("idle");
   const destinationRef = useRef<HTMLDivElement>(null);
   const departureAirportRef = useRef<HTMLDivElement>(null);
   const arrivalAirportRef = useRef<HTMLDivElement>(null);
+  const arrivalRequestRef = useRef(0);
 
   const airportLabels = airports.map(formatAirportLabel);
 
-  // Airport suggestions still come from coded airport data because flight search needs IATA codes.
+  // Match against airports already loaded from Duffel or the local departure fallback.
   const getArrivalAirportsForDestination = (destination: string) => {
     const target = normalizeCity(destination);
     if (!target) return [];
@@ -203,7 +227,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
 
     async function loadSearchData() {
       try {
-        // Keep airport data local for now; Google city places do not provide Duffel-ready IATA codes.
+        // Keep a local fallback because Google city places do not provide flight-ready IATA codes.
         const airportsResponse = await fetch("/backend/airports.json");
 
         if (!airportsResponse.ok) {
@@ -563,6 +587,7 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
 
   // Filter destination list as the user types.
   const handleDestinationChange = (value: string) => {
+    arrivalRequestRef.current += 1;
     const matchingArrivalAirports = getArrivalAirportsForDestination(value);
     const shouldAutoFillArrival =
       hasExactAirportCityMatch(value) && matchingArrivalAirports.length === 1;
@@ -617,37 +642,95 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
     setShowArrivalAirportSuggestions(false);
   };
 
-  // Apply chosen destination and close the list.
-  const selectDestination = async (destination: DestinationSuggestion) => {
-    const matchingArrivalAirports = getArrivalAirportsForDestination(destination.city);
-    const nextArrivalAirport =
-      matchingArrivalAirports.length === 1
-        ? matchingArrivalAirports[0]
-        : matchingArrivalAirports.includes(searchData.arrivalAirport)
-          ? searchData.arrivalAirport
-          : "";
+  // Manual suggestions and popular cards share this path so airport behavior stays identical.
+  const applyDestinationSelection = async (
+    destination: DestinationSuggestion,
+    airportSearchCity = destination.city,
+  ) => {
+    const requestId = ++arrivalRequestRef.current;
     let countryCode = destination.countryCode;
+    let country = destination.country;
 
     if (!countryCode && destination.placeId) {
       try {
         const details = await fetchGooglePlaceDetails(destination.placeId);
         countryCode = details.countryCode || "";
+        country = details.country || country;
       } catch (error) {
         console.warn("Could not load Google place details:", error);
       }
     }
 
-    setSearchData({
-      ...searchData,
+    setSearchData((current) => ({
+      ...current,
       destination: destination.city,
       countryCode,
-      arrivalAirport: nextArrivalAirport,
-    });
+      arrivalAirport: "",
+    }));
+    setShowDestinationSuggestions(false);
+    setArrivalAirportStatus("loading");
+    setShowArrivalAirportSuggestions(true);
+
+    let suggestedAirports: Airport[] = [];
+    try {
+      suggestedAirports = await fetchAirportSuggestions(
+        [airportSearchCity, country].filter(Boolean).join(", "),
+      );
+    } catch (error) {
+      console.warn("Live airport suggestions unavailable:", error);
+    }
+
+    if (requestId !== arrivalRequestRef.current) return;
+
+    const liveAirportLabels = suggestedAirports.map(formatAirportLabel);
+    const fallbackAirportLabels = getArrivalAirportsForDestination(airportSearchCity);
+    const matchingArrivalAirports =
+      liveAirportLabels.length > 0 ? liveAirportLabels : fallbackAirportLabels;
+
+    if (suggestedAirports.length > 0) {
+      setAirports((current) => {
+        const merged = new Map(current.map((airport) => [airport.code, airport]));
+        suggestedAirports.forEach((airport) => merged.set(airport.code, airport));
+        return Array.from(merged.values());
+      });
+    }
+
     setFilteredArrivalAirports(
       matchingArrivalAirports.length > 0 ? matchingArrivalAirports : airportLabels,
     );
-    setShowDestinationSuggestions(false);
-    setShowArrivalAirportSuggestions(matchingArrivalAirports.length > 0);
+    setArrivalAirportStatus("idle");
+
+    if (matchingArrivalAirports.length === 1) {
+      setSearchData((current) => ({
+        ...current,
+        arrivalAirport: matchingArrivalAirports[0],
+      }));
+      setShowArrivalAirportSuggestions(false);
+      window.setTimeout(() => document.getElementById("departureAirport")?.focus(), 0);
+    } else {
+      setShowArrivalAirportSuggestions(matchingArrivalAirports.length > 1);
+      window.setTimeout(() => document.getElementById("arrivalAirport")?.focus(), 0);
+    }
+  };
+
+  // Apply a popular destination as though the user selected it from Google autocomplete.
+  useEffect(() => {
+    if (!destinationPreset) return;
+
+    void applyDestinationSelection(
+      {
+        city: destinationPreset.city,
+        country: destinationPreset.country,
+        countryCode: destinationPreset.countryCode,
+        label: destinationPreset.city,
+      },
+      destinationPreset.airportSearchCity,
+    );
+  }, [destinationPreset?.selectionId]);
+
+  // Apply a city chosen from the Google destination list.
+  const selectDestination = async (destination: DestinationSuggestion) => {
+    await applyDestinationSelection(destination);
   };
 
   const isHero = variant === "hero";
@@ -797,10 +880,17 @@ export default function SearchBar({ variant = "hero" }: SearchBarProps) {
               onFocus={() => setShowArrivalAirportSuggestions(true)}
             />
           </div>
-          {showArrivalAirportSuggestions && filteredArrivalAirports.length > 0 && (
+          {showArrivalAirportSuggestions && (
             <div className="absolute z-50 w-full mt-1 bg-popover border border-popover-border rounded-lg shadow-lg max-h-60 overflow-auto">
+              {arrivalAirportStatus === "loading" && (
+                <div className="px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Finding nearby airports...
+                </div>
+              )}
+
               {/* Each row: set arrival airport */}
-              {filteredArrivalAirports.map((airport) => (
+              {arrivalAirportStatus !== "loading" && filteredArrivalAirports.map((airport) => (
                 <button
                   key={airport}
                   type="button"

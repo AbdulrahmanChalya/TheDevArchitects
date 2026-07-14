@@ -17,27 +17,33 @@ export default function DestinationDetails() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/destination/:destination");
 
-  const destination = params?.destination || "Paris";
+  const routeId = params?.destination || "";
   const urlParams = new URLSearchParams(window.location.search);
 
   const searchData = {
-    destination: urlParams.get("destination") || destination,
     startDate: urlParams.get("startDate") || "",
     endDate: urlParams.get("endDate") || "",
-    people: urlParams.get("people") || "2",
+    people: urlParams.get("people") || "1",
     rooms: urlParams.get("rooms") || "1",
   };
 
-  const imageLookup = parseDestinationLabel(searchData.destination);
-  const cityQuery = imageLookup.name;
-  const routeId = params?.destination ?? "";
+  const requestedDestination = urlParams.get("destination") || routeId;
+  const imageLookup = parseDestinationLabel(requestedDestination);
 
   const { data: destinations } = useQuery({
     queryKey: ["/api/destinations"],
     queryFn: async () => {
       const response = await fetch("/backend/destinations.json");
       return response.json() as Promise<
-        { id: string; name: string; country: string; imageUrl?: string }[]
+        {
+          id: string;
+          name: string;
+          country: string;
+          countryCode: string;
+          airportSearchCity?: string;
+          description: string;
+          imageUrl?: string;
+        }[]
       >;
     },
   });
@@ -51,6 +57,11 @@ export default function DestinationDetails() {
           entry.country.toLowerCase() === imageLookup.country.toLowerCase()),
     );
 
+  const destinationName = matchedDestination?.name ?? imageLookup.name;
+  const destinationCountry = matchedDestination?.country ?? imageLookup.country;
+  // Card routes use an id, so wait for the catalog match before requesting attractions.
+  const cityQuery = matchedDestination?.name ?? (urlParams.has("destination") ? imageLookup.name : "");
+
   const { data: liveAttractions } = useQuery({
     queryKey: ["live-attractions", cityQuery],
     queryFn: () => fetchLiveAttractions(cityQuery, parseInt(searchData.people, 10)),
@@ -59,8 +70,18 @@ export default function DestinationDetails() {
   });
 
   const handleBookNow = () => {
-    const nextParams = new URLSearchParams(searchData);
-    setLocation(`/search?${nextParams.toString()}`);
+    const nextParams = new URLSearchParams({
+      destination: destinationName,
+      country: destinationCountry || "",
+      countryCode: matchedDestination?.countryCode || "",
+      airportSearchCity: matchedDestination?.airportSearchCity || destinationName,
+      people: searchData.people,
+      rooms: searchData.rooms,
+      startDate: searchData.startDate,
+      endDate: searchData.endDate,
+      popularDestination: "true",
+    });
+    setLocation(`/?${nextParams.toString()}#trip-search`);
   };
 
   return (
@@ -69,7 +90,7 @@ export default function DestinationDetails() {
 
       <PlaceImageBackground
         name={matchedDestination?.name ?? imageLookup.name}
-        country={matchedDestination?.country ?? imageLookup.country}
+        country={destinationCountry}
         imageUrl={matchedDestination?.imageUrl}
         type="destination"
         className="relative h-64 md:h-80"
@@ -77,7 +98,7 @@ export default function DestinationDetails() {
         <div className="absolute inset-0 flex items-end">
           <div className="container mx-auto px-4 py-8">
             <h1 className="text-4xl font-bold text-white drop-shadow-lg mb-2">
-              {searchData.destination}
+              {destinationName}
             </h1>
             <div className="flex items-center gap-4 text-white/90">
               <div className="flex items-center gap-1">
@@ -125,7 +146,7 @@ export default function DestinationDetails() {
                   <MapPin className="h-4 w-4 text-blue-500" />
                   <div>
                     <p className="font-medium">Destination</p>
-                    <p className="text-sm text-gray-600">{searchData.destination}</p>
+                    <p className="text-sm text-gray-600">{destinationName}</p>
                   </div>
                 </div>
               </div>
@@ -134,11 +155,10 @@ export default function DestinationDetails() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div>
-              <h2 className="text-2xl font-semibold mb-4">About {searchData.destination}</h2>
+              <h2 className="text-2xl font-semibold mb-4">About {destinationName}</h2>
               <p className="text-gray-600 mb-4">
-                Discover the magic of {searchData.destination}, a world-renowned destination offering
-                incredible experiences, rich culture, and unforgettable memories. From historic
-                landmarks to modern attractions, this destination has something for every traveler.
+                {matchedDestination?.description ||
+                  `Discover ${destinationName}, its local culture, landmarks, and memorable travel experiences.`}
               </p>
               <div className="space-y-3">
                 <h3 className="font-semibold">Popular Attractions:</h3>
