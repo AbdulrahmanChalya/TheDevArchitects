@@ -42,15 +42,6 @@ export default function Footer() {
                 <a
                   href="#"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  data-testid="link-footer-contact"
-                >
-                  Contact Us
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   data-testid="link-footer-privacy"
                 >
                   Privacy Policy
