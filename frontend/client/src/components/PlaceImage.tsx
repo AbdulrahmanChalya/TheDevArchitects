@@ -4,11 +4,11 @@ import {
   buildPlaceQuery,
   fetchPlaceImage,
   getLocationImageQueryKey,
+  getPlaceholderGradient,
   parseDestinationLabel,
   type LocationImageRequest,
   type LocationImageType,
 } from "@/lib/placeImages";
-import { getPlaceholderGradient } from "@/lib/curatedImages";
 
 type PlaceImageLookup = LocationImageRequest | { query: string; type?: LocationImageType };
 

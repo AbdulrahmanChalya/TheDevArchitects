@@ -1,5 +1,5 @@
 // Site footer. Newsletter submit is a stub (no API). Footer links are placeholders.
-import { Plane, Facebook, Twitter, Instagram, Mail } from "lucide-react";
+import { Plane, Mail } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,22 +23,6 @@ export default function Footer() {
             <p className="text-sm text-muted-foreground">
               Your perfect trip planner. Discover amazing destinations and create unforgettable memories.
             </p>
-            <div className="flex gap-3">
-
-              {/* Social link placeholder — no URL yet */}
-              <Button variant="ghost" size="icon" className="h-9 w-9" data-testid="button-facebook">
-                <Facebook className="h-4 w-4" />
-              </Button>
-              {/* Social link placeholder — no URL yet */}
-              <Button variant="ghost" size="icon" className="h-9 w-9" data-testid="button-twitter">
-                <Twitter className="h-4 w-4" />
-              </Button>
-              {/* Social link placeholder — no URL yet */}
-              <Button variant="ghost" size="icon" className="h-9 w-9" data-testid="button-instagram">
-                <Instagram className="h-4 w-4" />
-              </Button>
-              
-            </div>
           </div>
 
           <div>

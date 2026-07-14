@@ -1,5 +1,8 @@
 const backendBase = () => import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
+export const HERO_IMAGE_URL =
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Beach%2C_pier_and_cloud._Eriyadu%2C_Maldives.jpg/1280px-Beach%2C_pier_and_cloud._Eriyadu%2C_Maldives.jpg";
+
 export type LocationImageType = "destination" | "attraction" | "hero";
 
 export interface LocationImageRequest {

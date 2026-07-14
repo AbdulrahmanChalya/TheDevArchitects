@@ -8,7 +8,7 @@ import DestinationCard from "@/components/DestinationCard";
 import RecommendationCard from "@/components/RecommendationCard";
 import Footer from "@/components/Footer";
 import { PlaceImageBackground } from "@/components/PlaceImage";
-import { HERO_IMAGE_URL } from "@/lib/curatedImages";
+import { HERO_IMAGE_URL } from "@/lib/placeImages";
 import { Lightbulb } from "lucide-react";
 
 // Shape of one item in /backend/destinations.json.
