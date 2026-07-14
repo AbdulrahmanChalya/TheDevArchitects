@@ -42,4 +42,9 @@ export class ScrapingController {
     getPlaceDetails(@Query() query: Record<string, any>) {
       return this.scrapingService.callScrapingService('api/places/details', query);
     }
+
+    @Get('airports/suggestions')
+    getAirportSuggestions(@Query() query: Record<string, any>) {
+      return this.scrapingService.callScrapingService('api/airports/suggestions', query);
+    }
 }

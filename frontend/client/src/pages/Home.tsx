@@ -3,7 +3,7 @@
 // SearchBar here starts the flow by sending the user to /search.
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
-import SearchBar from "@/components/SearchBar";
+import SearchBar, { type DestinationPreset } from "@/components/SearchBar";
 import DestinationCard from "@/components/DestinationCard";
 import RecommendationCard from "@/components/RecommendationCard";
 import Footer from "@/components/Footer";
@@ -16,6 +16,8 @@ interface Destination {
   id: string;
   name: string;
   country: string;
+  countryCode: string;
+  airportSearchCity?: string;
   description: string;
   image: string;
   imageUrl?: string;
@@ -46,6 +48,22 @@ interface Recommendation {
 }
 
 export default function Home() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const destination = urlParams.get("destination") || "";
+  const country = urlParams.get("country") || "";
+  const countryCode = urlParams.get("countryCode") || "";
+  const airportSearchCity = urlParams.get("airportSearchCity") || undefined;
+  const destinationPreset: DestinationPreset | undefined =
+    urlParams.get("popularDestination") === "true" && destination
+      ? {
+          city: destination,
+          country,
+          countryCode,
+          airportSearchCity,
+          selectionId: 1,
+        }
+      : undefined;
+
   // Load destination cards (static JSON, not a real /api route).
   const { data: destinations, isLoading } = useQuery<Destination[]>({
     queryKey: ["/api/destinations"],
@@ -80,8 +98,8 @@ export default function Home() {
             Plan your dream vacation with real-time flights, hotels, and personalized itineraries
           </p>
 
-          <div className="max-w-5xl mx-auto">
-            <SearchBar variant="hero" />
+          <div id="trip-search" className="max-w-5xl mx-auto scroll-mt-6">
+            <SearchBar variant="hero" destinationPreset={destinationPreset} />
           </div>
         </div>
       </PlaceImageBackground>
