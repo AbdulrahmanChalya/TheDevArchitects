@@ -1,5 +1,6 @@
 // Site footer. Newsletter submit is a stub (no API). Footer links are placeholders.
 import { Plane, Mail } from "lucide-react";
+import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -28,13 +29,14 @@ export default function Footer() {
             <h4 className="font-semibold text-foreground mb-4">Support</h4>
             <ul className="space-y-2.5">
               <li>
-                <a
-                  href="#"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  data-testid="link-footer-help"
-                >
-                  Help Center
-                </a>
+                <Link href="/help">
+                  <span
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    data-testid="link-footer-help"
+                  >
+                    Help Center
+                  </span>
+                </Link>
               </li>
               <li>
                 <a
