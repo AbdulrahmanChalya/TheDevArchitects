@@ -285,7 +285,9 @@ export default function TripPackageDetails() {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Attractions</span>
-                      <span className="text-muted-foreground">Not included</span>
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        Price not included
+                      </span>
                     </div>
 
                     <Separator />
