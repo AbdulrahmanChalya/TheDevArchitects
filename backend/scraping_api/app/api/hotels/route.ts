@@ -3,7 +3,7 @@ import { liteApiFetch } from "../../../lib/liteApi";
 import { buildHotelRatesPayload } from "../../../lib/liteApiHotelRates";
 import { normalizeLiteApiRooms } from "../../../parsing/liteApiRoomAvailabilityParser";
 
-export const revalidate = 60 * 15;
+export const revalidate = 900;
 
 const MAX_HOTELS = 20;
 

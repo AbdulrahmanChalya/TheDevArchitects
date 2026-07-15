@@ -1,5 +1,6 @@
 // Calls Nest to build AI vacation packages from the search form.
 import type { QueryClient } from "@tanstack/react-query";
+import { backendUrl } from "@/lib/backendUrl";
 
 export interface SearchFormParams {
   destination: string;
@@ -210,13 +211,12 @@ export function searchParamsFromUrl(urlParams: URLSearchParams): SearchFormParam
 }
 
 export async function fetchBackendSearch(params: SearchFormParams) {
-  const base = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
   const qs = buildBackendSearchQuery(params).toString();
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 15000);
 
   try {
-    const response = await fetch(`${base}/api/search?${qs}`, {
+    const response = await fetch(backendUrl(`/api/search?${qs}`), {
       signal: controller.signal,
     });
     if (!response.ok) {
@@ -232,18 +232,17 @@ export async function fetchBackendSearch(params: SearchFormParams) {
 }
 
 export async function fetchVacationPackages(params: SearchFormParams): Promise<VacationPackage[]> {
-  const base = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
   const query = buildBackendSearchQuery(params);
   const qs = query.toString();
 
-  const scrapeResponse = await fetch(`${base}/api/search?${qs}`);
+  const scrapeResponse = await fetch(backendUrl(`/api/search?${qs}`));
   if (!scrapeResponse.ok) {
     throw new Error(`Scrape request failed (${scrapeResponse.status})`);
   }
 
   // Package generation is two-step: collect live scrape data, then ask the AI to shape bundles.
   const scrapedResponse = await scrapeResponse.json();
-  const aiResponse = await fetch(`${base}/api/ai/vacation-packages`, {
+  const aiResponse = await fetch(backendUrl("/api/ai/vacation-packages"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

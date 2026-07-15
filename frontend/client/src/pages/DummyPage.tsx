@@ -2,6 +2,7 @@
 // search API with hardcoded params and logs the result. Not part of the real
 // user flow.
 import React, { useState } from "react";
+import { backendUrl } from "@/lib/backendUrl";
 
 // Dev-only page: one button hits GET /api/search on the Nest backend.
 const DummyPage = () => {
@@ -27,8 +28,7 @@ const DummyPage = () => {
     setResponse("");
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-      const scrapeResponse = await fetch(`${backendUrl}/api/search?${searchParams.toString()}`);
+      const scrapeResponse = await fetch(backendUrl(`/api/search?${searchParams.toString()}`));
 
       if (!scrapeResponse.ok) {
         throw new Error(`Scrape request failed: ${scrapeResponse.status}`);
@@ -37,7 +37,7 @@ const DummyPage = () => {
       const scrapedResponse = await scrapeResponse.json();
       console.log("SCRAPED RESULT ->", scrapedResponse);
 
-      const aiResponse = await fetch(`${backendUrl}/api/ai/vacation-packages`, {
+      const aiResponse = await fetch(backendUrl("/api/ai/vacation-packages"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

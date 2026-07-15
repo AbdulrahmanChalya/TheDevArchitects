@@ -1,4 +1,4 @@
-const backendBase = () => import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+import { backendUrl } from "@/lib/backendUrl";
 
 export interface LiveAttraction {
   id: string;
@@ -22,7 +22,7 @@ export async function fetchLiveAttractions(city: string, people = 2) {
 
   try {
     const params = new URLSearchParams({ city: trimmed, people: String(people) });
-    const response = await fetch(`${backendBase()}/api/attractions?${params}`);
+    const response = await fetch(backendUrl(`/api/attractions?${params}`));
     if (!response.ok) return null;
     return response.json() as Promise<{ attractions: LiveAttraction[] }>;
   } catch {
@@ -51,7 +51,7 @@ export async function fetchLiveHotels(params: {
     if (params.startDate) query.set("startDate", params.startDate);
     if (params.endDate) query.set("endDate", params.endDate);
 
-    const response = await fetch(`${backendBase()}/api/hotels?${query}`);
+    const response = await fetch(backendUrl(`/api/hotels?${query}`));
     if (!response.ok) return null;
     return response.json() as Promise<{ rooms: LiveHotelRoom[] }>;
   } catch {

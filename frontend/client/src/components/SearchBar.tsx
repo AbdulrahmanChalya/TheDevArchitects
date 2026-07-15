@@ -20,6 +20,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, isValid } from "date-fns";
 import { useLocation } from "wouter";
 import { startBackendSearch } from "@/lib/backendSearch";
+import { backendUrl } from "@/lib/backendUrl";
 import { useAuth } from "@/contexts/AuthContext";
 
 // SearchBar — trip search form used on Home and SearchResults.
@@ -69,8 +70,6 @@ function formatAirportLabel(airport: Airport) {
   return `${airport.code} - ${airport.name} (${airport.city})`;
 }
 
-const backendBase = () => import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-
 // City autocomplete is intentionally API-backed only; no local destination JSON fallback.
 async function fetchGoogleCitySuggestions(input: string): Promise<DestinationSuggestion[]> {
   if (input.trim().length < 2) return [];
@@ -79,7 +78,7 @@ async function fetchGoogleCitySuggestions(input: string): Promise<DestinationSug
     input: input.trim(),
     languageCode: "en",
   });
-  const response = await fetch(`${backendBase()}/api/places/autocomplete?${params.toString()}`);
+  const response = await fetch(backendUrl(`/api/places/autocomplete?${params.toString()}`));
 
   if (!response.ok) {
     throw new Error(`City autocomplete failed (${response.status})`);
@@ -98,7 +97,7 @@ async function fetchGoogleCitySuggestions(input: string): Promise<DestinationSug
 
 async function fetchGooglePlaceDetails(placeId: string) {
   const params = new URLSearchParams({ placeId });
-  const response = await fetch(`${backendBase()}/api/places/details?${params.toString()}`);
+  const response = await fetch(backendUrl(`/api/places/details?${params.toString()}`));
 
   if (!response.ok) {
     throw new Error(`Place details failed (${response.status})`);
@@ -112,7 +111,7 @@ async function fetchGooglePlaceDetails(placeId: string) {
 
 async function fetchAirportSuggestions(input: string): Promise<Airport[]> {
   const params = new URLSearchParams({ query: input.trim() });
-  const response = await fetch(`${backendBase()}/api/airports/suggestions?${params.toString()}`);
+  const response = await fetch(backendUrl(`/api/airports/suggestions?${params.toString()}`));
 
   if (!response.ok) {
     throw new Error(`Airport suggestions failed (${response.status})`);
@@ -135,11 +134,11 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
     countryCode: "",
     departureAirport: "",  // full label string from suggestions
     arrivalAirport: "",
-    people: "",            // total guests as string (adults + children)
+    people: "1",           // total guests as string (adults + children)
     budget: "",            // max USD budget as string
     startDate: undefined as Date | undefined,
     endDate: undefined as Date | undefined,
-    rooms: "",             // room count as string
+    rooms: "1",            // room count as string
   });
 
   // Guest/room counts (synced into searchData.people and searchData.rooms).
@@ -153,6 +152,7 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
   const [showTravelersDropdown, setShowTravelersDropdown] = useState(false);
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [dateError, setDateError] = useState("");
+  const [formError, setFormError] = useState("");
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   // After geolocation, departure airport list is replaced with API/fallback nearby results
   const [nearbyAirports, setNearbyAirports] = useState<string[]>([]);
@@ -177,6 +177,19 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
   const arrivalRequestRef = useRef(0);
 
   const airportLabels = airports.map(formatAirportLabel);
+
+  useEffect(() => {
+    setFormError("");
+  }, [
+    searchData.destination,
+    searchData.departureAirport,
+    searchData.arrivalAirport,
+    searchData.people,
+    searchData.rooms,
+    searchData.startDate,
+    searchData.endDate,
+    searchData.budget,
+  ]);
 
   // Match against airports already loaded from Duffel or the local departure fallback.
   const getArrivalAirportsForDestination = (destination: string) => {
@@ -383,9 +396,9 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
         const { latitude, longitude } = position.coords;
         
         try {
-          // Fetch nearby airports from API
-          // TODO: use import.meta.env.VITE_BACKEND_URL instead of hardcoded localhost
-          const response = await fetch(`http://localhost:8000/api/airports/nearby?lat=${latitude}&lng=${longitude}&limit=5`);
+          const response = await fetch(
+            backendUrl(`/api/airports/nearby?lat=${latitude}&lng=${longitude}&limit=5`),
+          );
           
           if (!response.ok) {
             throw new Error('Failed to fetch nearby airports');
@@ -530,10 +543,67 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
     validateDates(searchData.startDate, date);
   };
 
-  // Validate dates, start backend search, then go to sign-in before results.
+  const validateRequiredFields = () => {
+    const requiredFields = [
+      { label: "destination", value: searchData.destination.trim(), elementId: "destination" },
+      {
+        label: "departure airport",
+        value: searchData.departureAirport.trim(),
+        elementId: "departureAirport",
+      },
+      {
+        label: "arrival airport",
+        value: searchData.arrivalAirport.trim(),
+        elementId: "arrivalAirport",
+      },
+      {
+        label: "check-in date",
+        value: searchData.startDate && isValid(searchData.startDate),
+        elementId: "dateRange",
+      },
+      {
+        label: "check-out date",
+        value: searchData.endDate && isValid(searchData.endDate),
+        elementId: "dateRange",
+      },
+      {
+        label: "guests",
+        value: Number(searchData.people) >= 1,
+        elementId: "travelers",
+      },
+      {
+        label: "rooms",
+        value: Number(searchData.rooms) >= 1,
+        elementId: "travelers",
+      },
+      {
+        label: "budget",
+        value: searchData.budget.trim() && Number(searchData.budget) > 0,
+        elementId: "budget",
+      },
+    ];
+
+    const missingFields = requiredFields.filter((field) => !field.value);
+    if (missingFields.length === 0) {
+      setFormError("");
+      return true;
+    }
+
+    setFormError(
+      `Please complete all required fields: ${missingFields.map((field) => field.label).join(", ")}.`,
+    );
+    window.setTimeout(() => document.getElementById(missingFields[0].elementId)?.focus(), 0);
+    return false;
+  };
+
+  // Validate required fields and dates, then start the search.
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!validateRequiredFields()) {
+      return;
+    }
+
     if (!validateDates(searchData.startDate, searchData.endDate)) {
       return;
     }
@@ -548,12 +618,12 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
         : "";
 
     const formParams = {
-      destination: searchData.destination,
+      destination: searchData.destination.trim(),
       countryCode: searchData.countryCode,
-      departureAirport: searchData.departureAirport,
-      arrivalAirport: searchData.arrivalAirport,
+      departureAirport: searchData.departureAirport.trim(),
+      arrivalAirport: searchData.arrivalAirport.trim(),
       people: searchData.people,
-      budget: searchData.budget,
+      budget: searchData.budget.trim(),
       startDate,
       endDate,
       rooms: searchData.rooms,
@@ -738,13 +808,14 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
   return (
     <form
       onSubmit={handleSearch}
+      noValidate
       className={`w-full ${isHero ? 'bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 md:p-8' : 'bg-card rounded-xl shadow-md p-4'}`}
       data-testid="form-search"
     >
       <div className="mb-4">
         <div className="space-y-2 relative" ref={destinationRef}>
           <Label htmlFor="destination" className="text-sm font-semibold text-gray-700">
-            Where are you going?
+            Where are you going? <span className="text-red-600">*</span>
           </Label>
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 z-10" />
@@ -756,6 +827,7 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
               value={searchData.destination}
               onChange={(e) => handleDestinationChange(e.target.value)}
               onFocus={() => setShowDestinationSuggestions(true)}
+              required
               data-testid="input-destination"
             />
           </div>
@@ -806,7 +878,7 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
       <div className="mb-4 grid gap-4 grid-cols-1 md:grid-cols-2">
         <div className="space-y-2 relative" ref={departureAirportRef}>
           <Label htmlFor="departureAirport" className="text-sm font-semibold text-gray-700">
-            Departure Airport
+            Departure Airport <span className="text-red-600">*</span>
           </Label>
           <div className="relative">
             <PlaneTakeoff className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 z-10" />
@@ -818,6 +890,7 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
               value={searchData.departureAirport}
               onChange={(e) => handleDepartureAirportChange(e.target.value)}
               onFocus={() => setShowDepartureAirportSuggestions(true)}
+              required
             />
           </div>
           {showDepartureAirportSuggestions && (
@@ -866,7 +939,7 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
 
         <div className="space-y-2 relative" ref={arrivalAirportRef}>
           <Label htmlFor="arrivalAirport" className="text-sm font-semibold text-gray-700">
-            Arrival Airport
+            Arrival Airport <span className="text-red-600">*</span>
           </Label>
           <div className="relative">
             <PlaneLanding className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 z-10" />
@@ -878,6 +951,7 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
               value={searchData.arrivalAirport}
               onChange={(e) => handleArrivalAirportChange(e.target.value)}
               onFocus={() => setShowArrivalAirportSuggestions(true)}
+              required
             />
           </div>
           {showArrivalAirportSuggestions && (
@@ -911,16 +985,18 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
       <div className={`grid gap-4 ${isHero ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2'}`}>
         <div className="space-y-3 relative" ref={dateRef}>
           <Label htmlFor="dateRange" className="text-sm font-semibold text-gray-700">
-            Dates
+            Dates <span className="text-red-600">*</span>
           </Label>
           {/* Open or close check-in / check-out calendars */}
           <Button
+            id="dateRange"
             type="button"
             variant="outline"
             className={`w-full justify-start text-left font-normal pl-12 h-12 text-base border-2 hover:border-blue-300 transition-colors ${
               !searchData.startDate && !searchData.endDate && "text-gray-500"
             } ${dateError ? 'border-red-500' : ''}`}
             onClick={() => setShowDateDropdown(!showDateDropdown)}
+            aria-required="true"
           >
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500" />
             {getDateRangeText()}
@@ -956,14 +1032,16 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
 
         <div className="space-y-3 relative" ref={travelersRef}>
           <Label htmlFor="travelers" className="text-sm font-semibold text-gray-700">
-            Guests & Rooms
+            Guests & Rooms <span className="text-red-600">*</span>
           </Label>
           {/* Open or close guests & rooms panel */}
           <Button
+            id="travelers"
             type="button"
             variant="outline"
             className="w-full justify-start text-left font-normal pl-12 h-12 text-base border-2 hover:border-blue-300 transition-colors"
             onClick={() => setShowTravelersDropdown(!showTravelersDropdown)}
+            aria-required="true"
           >
             <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500" />
             {getTravelersText()}
@@ -1100,19 +1178,20 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
 
         <div className="space-y-3">
           <Label htmlFor="budget" className="text-sm font-semibold text-gray-700">
-            Budget (USD)
+            Budget (USD) <span className="text-red-600">*</span>
           </Label>
           <div className="relative">
             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500" />
             <Input
               id="budget"
               type="number"
-              min="0"
+              min="1"
               step="100"
               placeholder="Total budget"
               className="pl-12 h-12 text-base border-2 hover:border-blue-300 focus:border-blue-500 transition-colors"
               value={searchData.budget}
               onChange={(e) => setSearchData({ ...searchData, budget: e.target.value })}
+              required
               data-testid="input-budget"
             />
           </div>
@@ -1125,6 +1204,15 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
             <span className="text-white text-xs">!</span>
           </div>
           {dateError}
+        </div>
+      )}
+
+      {formError && (
+        <div
+          className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3"
+          role="alert"
+        >
+          {formError}
         </div>
       )}
 
