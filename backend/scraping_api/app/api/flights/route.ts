@@ -3,7 +3,7 @@ import { Duffel } from "@duffel/api";
 import { buildDuffelFlightOfferRequest } from "../../../lib/flights";
 import { normalizeDuffelFlights } from "../../../parsing/duffelFlightParser";
 
-export const revalidate = 60 * 30;
+export const revalidate = 1800;
 
 export async function GET(req: NextRequest) {
   try {
