@@ -14,6 +14,11 @@ type DestinationMapProps = {
   attractions?: Attraction[];
 };
 
+type Coordinates = {
+  longitude: number;
+  latitude: number;
+};
+
 type GeocodedLocation = {
   name: string;
   longitude: number;
@@ -32,10 +37,58 @@ type MapboxGeocodeResponse = {
   features?: MapboxFeature[];
 };
 
+function createLabeledMarker(label: string, color: string) {
+  const el = document.createElement("div");
+
+  el.style.width = "30px";
+  el.style.height = "30px";
+  el.style.borderRadius = "50%";
+  el.style.backgroundColor = color;
+  el.style.color = "white";
+  el.style.display = "flex";
+  el.style.alignItems = "center";
+  el.style.justifyContent = "center";
+  el.style.fontSize = "14px";
+  el.style.fontWeight = "700";
+  el.style.border = "2px solid white";
+  el.style.boxShadow = "0 2px 6px rgba(0, 0, 0, 0.3)";
+  el.textContent = label;
+
+  return el;
+}
+
+function cleanAttractionName(name: string) {
+  return name
+    .replace(/^Visit the\s+/i, "")
+    .replace(/\s+Walking Tour$/i, "")
+    .replace(/\s+Cruise$/i, "")
+    .trim();
+}
+
+function getDistanceKm(first: Coordinates, second: Coordinates) {
+  const earthRadiusKm = 6371;
+
+  const lat1 = (first.latitude * Math.PI) / 180;
+  const lat2 = (second.latitude * Math.PI) / 180;
+  const latDifference = ((second.latitude - first.latitude) * Math.PI) / 180;
+  const lonDifference = ((second.longitude - first.longitude) * Math.PI) / 180;
+
+  const a =
+    Math.sin(latDifference / 2) * Math.sin(latDifference / 2) +
+    Math.cos(lat1) *
+      Math.cos(lat2) *
+      Math.sin(lonDifference / 2) *
+      Math.sin(lonDifference / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadiusKm * c;
+}
+
 async function geocodeDestination(
   query: string,
   accessToken: string,
-): Promise<{ longitude: number; latitude: number } | null> {
+): Promise<Coordinates | null> {
   try {
     const response = await fetch(
       `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(
@@ -66,28 +119,22 @@ async function geocodeDestination(
   }
 }
 
-function cleanAttractionName(name: string) {
-  return name
-    .replace(/^Visit the\s+/i, "")
-    .replace(/\s+Walking Tour$/i, "")
-    .replace(/\s+Cruise$/i, "")
-    .trim();
-}
-
 async function searchPointOfInterest(
   name: string,
   destinationName: string,
   country: string,
+  destinationCoordinates: Coordinates,
   accessToken: string,
   category: "hotel" | "attraction",
-): Promise<{ longitude: number; latitude: number } | null> {
+  maxDistanceKm: number,
+): Promise<Coordinates | null> {
   const query = `${name}, ${destinationName}, ${country}`;
 
   try {
     const response = await fetch(
       `https://api.mapbox.com/search/searchbox/v1/forward?q=${encodeURIComponent(
         query,
-      )}&limit=1&types=poi&access_token=${accessToken}`,
+      )}&limit=1&types=poi&proximity=${destinationCoordinates.longitude},${destinationCoordinates.latitude}&access_token=${accessToken}`,
     );
 
     if (!response.ok) {
@@ -103,34 +150,30 @@ async function searchPointOfInterest(
       return null;
     }
 
-    return {
+    const foundCoordinates = {
       longitude: coordinates[0],
       latitude: coordinates[1],
     };
+
+    const distanceFromDestination = getDistanceKm(
+      destinationCoordinates,
+      foundCoordinates,
+    );
+
+    if (distanceFromDestination > maxDistanceKm) {
+      console.warn(
+        `Skipped ${category} because it is too far from ${destinationName}: ${query} (${distanceFromDestination.toFixed(
+          1,
+        )} km away)`,
+      );
+      return null;
+    }
+
+    return foundCoordinates;
   } catch (error) {
     console.warn(`Could not find ${category}: ${query}`, error);
     return null;
   }
-}
-
-function createLabeledMarker(label: string, color: string) {
-  const el = document.createElement("div");
-
-  el.style.width = "30px";
-  el.style.height = "30px";
-  el.style.borderRadius = "50%";
-  el.style.backgroundColor = color;
-  el.style.color = "white";
-  el.style.display = "flex";
-  el.style.alignItems = "center";
-  el.style.justifyContent = "center";
-  el.style.fontSize = "14px";
-  el.style.fontWeight = "700";
-  el.style.border = "2px solid white";
-  el.style.boxShadow = "0 2px 6px rgba(0, 0, 0, 0.3)";
-  el.textContent = label;
-
-  return el;
 }
 
 export default function DestinationMap({
@@ -193,7 +236,6 @@ export default function DestinationMap({
         destinationCoordinates.latitude,
       ]);
 
-      // Blue marker: destination
       new mapboxgl.Marker({
         element: createLabeledMarker("D", "#2563eb"),
       })
@@ -208,29 +250,28 @@ export default function DestinationMap({
         )
         .addTo(map);
 
-      // Red marker: hotel. A failed hotel lookup does not stop the map.
+      let hotelWasFound = false;
+
       if (hotelName) {
         const hotelCoordinates = await searchPointOfInterest(
           hotelName,
           destinationName,
           country,
+          destinationCoordinates,
           accessToken,
           "hotel",
+          80,
         );
 
         if (hotelCoordinates && map) {
-          bounds.extend([
-            hotelCoordinates.longitude,
-            hotelCoordinates.latitude,
-          ]);
+          hotelWasFound = true;
+
+          bounds.extend([hotelCoordinates.longitude, hotelCoordinates.latitude]);
 
           new mapboxgl.Marker({
             element: createLabeledMarker("H", "#4c1d95"),
           })
-            .setLngLat([
-              hotelCoordinates.longitude,
-              hotelCoordinates.latitude,
-            ])
+            .setLngLat([hotelCoordinates.longitude, hotelCoordinates.latitude])
             .setPopup(
               new mapboxgl.Popup({ offset: 25 }).setHTML(
                 `<strong>Hotel</strong><br />${hotelName}`,
@@ -240,38 +281,39 @@ export default function DestinationMap({
         }
       }
 
-      // Green markers: attractions. Failed lookups are skipped individually.
-      const attractionResults = await Promise.all(
-        attractions.map(async (attraction) => {
-          const coordinates = await searchPointOfInterest(
-            cleanAttractionName(attraction.name),
-            destinationName,
-            country,
-            accessToken,
-            "attraction",
-          );
+      const attractionResults: Array<GeocodedLocation | null> =
+        await Promise.all(
+          attractions.map(async (attraction): Promise<GeocodedLocation | null> => {
+            const coordinates = await searchPointOfInterest(
+              cleanAttractionName(attraction.name),
+              destinationName,
+              country,
+              destinationCoordinates,
+              accessToken,
+              "attraction",
+              120,
+            );
 
-          if (!coordinates) {
-            return null;
-          }
+            if (!coordinates) {
+              return null;
+            }
 
-          return {
-            name: attraction.name,
-            description: attraction.description,
-            longitude: coordinates.longitude,
-            latitude: coordinates.latitude,
-            type: "attraction" as const,
-          };
-        }),
-      );
+            return {
+              name: attraction.name,
+              description: attraction.description,
+              longitude: coordinates.longitude,
+              latitude: coordinates.latitude,
+              type: "attraction",
+            };
+          }),
+        );
 
       if (cancelled || !map) {
         return;
       }
 
       const validAttractions = attractionResults.filter(
-        (attraction): attraction is GeocodedLocation =>
-          attraction !== null,
+        (attraction): attraction is GeocodedLocation => attraction !== null,
       );
 
       validAttractions.forEach((attraction) => {
@@ -290,10 +332,10 @@ export default function DestinationMap({
               }`,
             ),
           )
-          .addTo(map);
+          .addTo(map as mapboxgl.Map);
       });
 
-      if (validAttractions.length > 0 || hotelName) {
+      if (validAttractions.length > 0 || hotelWasFound) {
         map.fitBounds(bounds, {
           padding: 70,
           maxZoom: 13,
@@ -302,19 +344,19 @@ export default function DestinationMap({
       }
 
       if (!cancelled) {
-        const foundParts = [];
+        const messages = [];
 
-        if (hotelName) {
-          foundParts.push("hotel lookup completed");
+        if (hotelName && !hotelWasFound) {
+          messages.push("Hotel location was not found");
         }
 
         if (validAttractions.length !== attractions.length) {
-          foundParts.push(
+          messages.push(
             `${validAttractions.length} of ${attractions.length} attraction locations found`,
           );
         }
 
-        setStatusMessage(foundParts.join(" • "));
+        setStatusMessage(messages.join(" • "));
       }
     };
 

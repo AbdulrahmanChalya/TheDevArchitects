@@ -2,7 +2,6 @@
 //
 // :id is the destinationId from tripPackages (same as package id).
 // Pricing uses cheapest hotel/flight unless you later add selectors.
-// Attractions show as "Included" because JSON has no attraction prices.
 //
 // Reserve flow: build payment query → /signin?redirect=encoded(/payment?...)
 // so the user must pass through mock sign-in before PaymentPage.
@@ -260,7 +259,9 @@ export default function TripPackageDetails() {
                       <Ticket className="h-5 w-5 text-primary" />
                       Attractions
                     </CardTitle>
-                    <span className="text-sm font-semibold text-green-600">Included</span>
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      Price not included
+                    </span>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {pkg.attractions.length > 0 ? (
@@ -298,7 +299,9 @@ export default function TripPackageDetails() {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Attractions</span>
-                      <span className="text-green-600">Included</span>
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        Price not included
+                      </span>
                     </div>
 
                     <Separator />
