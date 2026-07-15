@@ -80,7 +80,7 @@ export interface PackagePricing {
   passengers: number;
   hotelCost: number;
   flightCost: number;
-  attractionsCost: number; // always 0 — included in bundle, not in JSON
+  attractionsCost: number; // always 0 — admission is excluded from the package total
   total: number;
   perPerson: number;
 }

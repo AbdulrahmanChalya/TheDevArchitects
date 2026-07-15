@@ -235,8 +235,8 @@ export default function TripPackageDetails() {
                       <Ticket className="h-5 w-5 text-primary" />
                       Attractions
                     </CardTitle>
-                    <span className="text-sm font-semibold text-green-600">
-                      Included
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      Price not included
                     </span>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -255,7 +255,7 @@ export default function TripPackageDetails() {
                             <p className="text-muted-foreground">
                               {attraction.pricePerPerson > 0
                                 ? `$${formatMoney(attraction.pricePerPerson)} / person`
-                                : "Included"}
+                                : "Price not included"}
                             </p>
                           </div>
                         </div>
@@ -285,7 +285,7 @@ export default function TripPackageDetails() {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Attractions</span>
-                      <span className="text-green-600">Included</span>
+                      <span className="text-muted-foreground">Not included</span>
                     </div>
 
                     <Separator />
