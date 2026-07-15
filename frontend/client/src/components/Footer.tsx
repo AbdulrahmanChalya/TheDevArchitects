@@ -49,13 +49,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  data-testid="link-footer-terms"
-                >
-                  Terms of Service
-                </a>
+                <Link href="/terms">
+                  <span
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    data-testid="link-footer-terms"
+                  >
+                    Terms of Service
+                  </span>
+                </Link>
               </li>
             </ul>
           </div>

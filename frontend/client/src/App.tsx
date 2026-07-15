@@ -31,6 +31,7 @@ import NotFound from "@/pages/not-found";
 import DummyPage from "./pages/DummyPage";
 import HelpCenter from "@/pages/HelpCenter";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfService from "@/pages/TermsOfService";
 import AIAssistantChat from "@/components/AIAssistantChat";
 
 // Maps each path to one page. Last route with no path = 404.
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/help" component={HelpCenter} />
       <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/terms" component={TermsOfService} />
       <Route component={NotFound} />
     </Switch>
   );
