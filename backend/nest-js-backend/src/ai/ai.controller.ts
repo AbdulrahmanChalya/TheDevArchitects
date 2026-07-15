@@ -104,6 +104,7 @@ Each package must choose exactly one hotel and one flight.
 Attractions may be repeated across packages, but packages should feel meaningfully different.
 Do not invent hotel ids, flight ids, attraction ids, names, or prices.
 If attraction prices are unavailable, use 0 for pricePerPerson.
+An attraction price of 0 means its admission is not included in the package total. Never describe it as included or free.
 All costs must be numbers in CAD.
 Must keep keep the totalCost under the budget
 totalCost must equal totalHotelCost + totalFlightCost + totalAttractionCost.

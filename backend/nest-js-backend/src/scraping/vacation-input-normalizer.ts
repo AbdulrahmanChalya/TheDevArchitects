@@ -58,7 +58,7 @@ export function normalizeForVacationModel(
       targetCurrency: TARGET_CURRENCY,
       usdToCadRate,
       flightPriceRule: 'Flight price from the scraper is the total cost for all requested passengers.',
-      attractionPriceRule: 'Google Places attractions are treated as 0 CAD per person.',
+      attractionPriceRule: 'Unavailable attraction prices use 0 CAD and are excluded from the package total.',
     },
     options: {
       hotels: hotels.map((hotel) => {
