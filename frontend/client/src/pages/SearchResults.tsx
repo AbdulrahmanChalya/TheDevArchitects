@@ -167,10 +167,10 @@ export default function SearchResults() {
                 <CardContent className="py-10 text-center">
                   <Loader2 className="h-10 w-10 text-primary mx-auto mb-4 animate-spin" />
                   <p className="text-lg font-semibold text-foreground mb-2">
-                    Finding your best trip packages
+                    A great trip is on the way…
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Checking live hotels, flights, attractions, and building AI recommendations.
+                    Your personalized getaway is coming together.
                   </p>
                 </CardContent>
               </Card>
