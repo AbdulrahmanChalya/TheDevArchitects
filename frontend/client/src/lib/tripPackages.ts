@@ -16,6 +16,7 @@ export interface BackendDestination {
   country: string;
   description: string;
   image: string;
+  imageUrl?: string;
   rating: number;
   reviewCount: number;
   pricePerNight: number;
@@ -62,6 +63,7 @@ export interface TripPackage {
   country: string;
   description: string;
   image: string;
+  imageUrl?: string;
   rating: number;
   reviewCount: number;
   activities: string[];
@@ -78,7 +80,7 @@ export interface PackagePricing {
   passengers: number;
   hotelCost: number;
   flightCost: number;
-  attractionsCost: number; // always 0 — included in bundle, not in JSON
+  attractionsCost: number; // always 0 — admission is excluded from the package total
   total: number;
   perPerson: number;
 }
@@ -121,6 +123,7 @@ export async function fetchTripPackages(): Promise<TripPackage[]> {
         country: dest.country,
         description: dest.description,
         image: dest.image,
+        imageUrl: dest.imageUrl,
         rating: dest.rating,
         reviewCount: dest.reviewCount,
         activities: dest.activities,

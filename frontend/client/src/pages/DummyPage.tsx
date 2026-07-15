@@ -2,41 +2,61 @@
 // search API with hardcoded params and logs the result. Not part of the real
 // user flow.
 import React, { useState } from "react";
-import { model } from "@/lib/firebaseAi";
-import { VacationPackage } from "../../../types/vacation";
+
 // Dev-only page: one button hits GET /api/search on the Nest backend.
 const DummyPage = () => {
   const [response, setResponse] = useState("");
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const searchParams = new URLSearchParams({
     originAirport: "JFK",
     destinationAirport: "CDG",
-    people: "2",
+    people: "1",
     city: "Paris",
     countryCode: "FR",
-    startDate: "2026-07-01",
-    endDate: "2026-07-30",
+    startDate: "2026-07-05",
+    endDate: "2026-07-10",
     rooms: "1",
+    budgetCad: "6000",
   });
 
-  // Call the backend search endpoint and log whatever comes back.
   const fetchData = async () => {
+    setLoading(true);
+    setError("");
+    setResponse("");
+
     try {
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/search?${searchParams.toString()}`,
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+      const scrapeResponse = await fetch(`${backendUrl}/api/search?${searchParams.toString()}`);
+
+      if (!scrapeResponse.ok) {
+        throw new Error(`Scrape request failed: ${scrapeResponse.status}`);
       }
-      const result = await response.json();
-      console.log("RESULT ->", result);
-      setResponse(result);
+
+      const scrapedResponse = await scrapeResponse.json();
+      console.log("SCRAPED RESULT ->", scrapedResponse);
+
+      const aiResponse = await fetch(`${backendUrl}/api/ai/vacation-packages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          scrapedResponse,
+          query: Object.fromEntries(searchParams.entries()),
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        throw new Error(`AI request failed: ${aiResponse.status}`);
+      }
+
+      const result = await aiResponse.json();
+      console.log("AI RESULT ->", result);
+      setResponse(JSON.stringify(result, null, 2));
     } catch (error: any) {
-      setError(error);
+      setError(error?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -55,6 +75,9 @@ const DummyPage = () => {
         </button>
         <br />
       </div>
+      {loading && <pre className="mt-5">Loading...</pre>}
+      {error && <pre className="mt-5 whitespace-pre-wrap text-red-600">{error}</pre>}
+      {response && <pre className="mt-5 whitespace-pre-wrap">{response}</pre>}
     </div>
   );
 };

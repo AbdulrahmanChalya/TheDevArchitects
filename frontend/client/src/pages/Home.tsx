@@ -3,12 +3,12 @@
 // SearchBar here starts the flow by sending the user to /search.
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
-import SearchBar from "@/components/SearchBar";
+import SearchBar, { type DestinationPreset } from "@/components/SearchBar";
 import DestinationCard from "@/components/DestinationCard";
 import RecommendationCard from "@/components/RecommendationCard";
 import Footer from "@/components/Footer";
-// Bundled at build time (not from /backend JSON).
-import heroImage from "@assets/images/Hero_tropical_beach_scene_e5fdeadc.png";
+import { PlaceImageBackground } from "@/components/PlaceImage";
+import { HERO_IMAGE_URL } from "@/lib/placeImages";
 import { Lightbulb } from "lucide-react";
 
 // Shape of one item in /backend/destinations.json.
@@ -16,8 +16,11 @@ interface Destination {
   id: string;
   name: string;
   country: string;
+  countryCode: string;
+  airportSearchCity?: string;
   description: string;
   image: string;
+  imageUrl?: string;
   rating: number;
   reviewCount: number;
   pricePerNight: number;
@@ -38,12 +41,29 @@ interface Recommendation {
   destination: string;
   tagline: string;
   image: string;
+  imageUrl?: string;
   activities: Activity[];
   bestTime: string;
   estimatedBudget: string;
 }
 
 export default function Home() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const destination = urlParams.get("destination") || "";
+  const country = urlParams.get("country") || "";
+  const countryCode = urlParams.get("countryCode") || "";
+  const airportSearchCity = urlParams.get("airportSearchCity") || undefined;
+  const destinationPreset: DestinationPreset | undefined =
+    urlParams.get("popularDestination") === "true" && destination
+      ? {
+          city: destination,
+          country,
+          countryCode,
+          airportSearchCity,
+          selectionId: 1,
+        }
+      : undefined;
+
   // Load destination cards (static JSON, not a real /api route).
   const { data: destinations, isLoading } = useQuery<Destination[]>({
     queryKey: ["/api/destinations"],
@@ -66,11 +86,9 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <section
-        className="relative min-h-[80vh] flex items-center justify-center bg-cover bg-center"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url(${heroImage})`,
-        }}
+      <PlaceImageBackground
+        imageUrl={HERO_IMAGE_URL}
+        className="relative min-h-[80vh] flex items-center justify-center"
       >
         <div className="container mx-auto px-4 md:px-6 text-center z-10">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 drop-shadow-lg">
@@ -80,11 +98,11 @@ export default function Home() {
             Plan your dream vacation with real-time flights, hotels, and personalized itineraries
           </p>
 
-          <div className="max-w-5xl mx-auto">
-            <SearchBar variant="hero" />
+          <div id="trip-search" className="max-w-5xl mx-auto scroll-mt-6">
+            <SearchBar variant="hero" destinationPreset={destinationPreset} />
           </div>
         </div>
-      </section>
+      </PlaceImageBackground>
 
       <section className="py-16 md:py-20 bg-background">
         <div className="container mx-auto px-4 md:px-6">
@@ -112,7 +130,7 @@ export default function Home() {
                   name={destination.name}
                   country={destination.country}
                   description={destination.description}
-                  image={destination.image}
+                  imageUrl={destination.imageUrl}
                   rating={destination.rating}
                   reviewCount={destination.reviewCount}
                   pricePerNight={destination.pricePerNight}
@@ -152,7 +170,7 @@ export default function Home() {
                   key={rec.id}
                   destination={rec.destination}
                   tagline={rec.tagline}
-                  image={rec.image}
+                  imageUrl={rec.imageUrl}
                   activities={rec.activities}
                   bestTime={rec.bestTime}
                   estimatedBudget={rec.estimatedBudget}

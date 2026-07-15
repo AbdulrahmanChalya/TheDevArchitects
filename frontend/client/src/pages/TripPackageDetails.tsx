@@ -1,10 +1,4 @@
-// TripPackageDetails (/package/:id) - full bundle breakdown before checkout.
-//
-// :id is the destinationId from tripPackages (same as package id).
-// Pricing uses cheapest hotel/flight unless you later add selectors.
-//
-// Reserve flow: build payment query → /signin?redirect=encoded(/payment?...)
-// so the user must pass through mock sign-in before PaymentPage.
+// TripPackageDetails (/package/:id) - full AI package breakdown before checkout.
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import Header from "@/components/Header";
@@ -15,73 +9,91 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
-  Star,
-  MapPin,
   Calendar,
-  Plane,
+  Check,
   Hotel,
+  Plane,
+  Sparkles,
   Ticket,
   Users,
-  Sparkles,
-  Check,
 } from "lucide-react";
 import {
-  fetchTripPackages,
-  getCheapestHotel,
-  getCheapestFlight,
-  computeNights,
-  computePackagePricing,
-  type TripPackage,
-} from "@/lib/tripPackages";
-
-const FALLBACK_IMAGE = "/attached_assets/images/Hero_tropical_beach_scene_e5fdeadc.png";
+  fetchVacationPackages,
+  getVacationPackageId,
+  getVacationPackagesQueryKey,
+  readSelectedVacationPackage,
+  readStoredVacationPackages,
+  searchParamsFromUrl,
+  type VacationPackage,
+} from "@/lib/backendSearch";
+import { PlaceImage } from "@/components/PlaceImage";
 
 export default function TripPackageDetails() {
-  // :id in the URL is the package / destination id from tripPackages.
   const [location, setLocation] = useLocation();
   const [, params] = useRoute("/package/:id");
   const packageId = params?.id ?? "";
 
-  const queryString = location.split("?")[1] ?? "";
-  const searchParams = new URLSearchParams(queryString);
+  const searchString =
+    typeof window === "undefined" ? location.split("?")[1] ?? "" : window.location.search;
+  const searchParams = new URLSearchParams(searchString);
+  const formParams = searchParamsFromUrl(searchParams);
+  const passengers = Math.max(1, parseInt(searchParams.get("people") || "1", 10));
+  const hasSearchCriteria = Boolean(
+    formParams.destination ||
+      formParams.startDate ||
+      formParams.departureAirport ||
+      formParams.arrivalAirport,
+  );
 
-  const passengers = Math.max(1, parseInt(searchParams.get("people") || "2", 10));
-  const nights = computeNights(searchParams.get("startDate"), searchParams.get("endDate"));
-
-  const { data: pkg, isLoading } = useQuery<TripPackage | undefined>({
-    queryKey: ["trip-packages", packageId],
-    queryFn: async () => {
-      const packages = await fetchTripPackages();
-      return packages.find((p) => p.id === packageId);
-    },
+  const {
+    data: packages = [],
+    isLoading,
+    isFetching,
+    isError,
+  } = useQuery<VacationPackage[]>({
+    queryKey: getVacationPackagesQueryKey(formParams),
+    queryFn: () => fetchVacationPackages(formParams),
+    enabled: hasSearchCriteria,
+    // Details can render instantly from the package selected on /search.
+    initialData: () => readStoredVacationPackages(formParams),
+    retry: false,
   });
 
-  // Go back to search results with the same query string.
+  // Prefer the exact clicked package; fall back to the refetched package list after refresh.
+  const selectedPackage = readSelectedVacationPackage(formParams, packageId);
+  const generatedPackage = packages.find(
+    (candidate, index) => getVacationPackageId(candidate, index) === packageId,
+  );
+  const pkg = selectedPackage ?? generatedPackage;
+  const isBuilding = isLoading || (isFetching && !pkg);
+  const mapCountry = formParams.countryCode || undefined;
+
   const handleCancel = () => {
     const query = searchParams.toString();
     setLocation(query ? `/search?${query}` : "/search");
   };
 
-  // Reserve: package up the order details and send the user to sign in first,
-  // then on to the payment page (via the redirect query param).
   const handleReserve = () => {
     if (!pkg) return;
-    const pricing = computePackagePricing(pkg, { nights, passengers });
     const paymentParams = new URLSearchParams({
-      destination: `${pkg.name}, ${pkg.country}`,
+      destination: pkg.destinationCity,
       startDate: searchParams.get("startDate") ?? "",
       endDate: searchParams.get("endDate") ?? "",
       people: String(passengers),
       rooms: searchParams.get("rooms") ?? "1",
-      total: String(pricing.total),
-      packageId: pkg.id,
+      total: String(pkg.totalCost),
+      packageId: pkg.vacationId,
     });
-    // Per workflow: prompt sign in, then continue to payment.
     const redirect = `/payment?${paymentParams.toString()}`;
     setLocation(`/signin?redirect=${encodeURIComponent(redirect)}`);
   };
 
-  if (isLoading) {
+  const formatMoney = (value: number) =>
+    value.toLocaleString(undefined, {
+      maximumFractionDigits: 0,
+    });
+
+  if (isBuilding) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -97,7 +109,7 @@ export default function TripPackageDetails() {
     );
   }
 
-  if (!pkg) {
+  if (isError || !pkg) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -108,7 +120,6 @@ export default function TripPackageDetails() {
               <p className="text-lg text-muted-foreground mb-6">
                 We couldn't find that trip package.
               </p>
-              {/* Unknown package id */}
               <Button onClick={handleCancel}>Back to Results</Button>
             </CardContent>
           </Card>
@@ -118,10 +129,6 @@ export default function TripPackageDetails() {
     );
   }
 
-  const hotel = getCheapestHotel(pkg);
-  const flight = getCheapestFlight(pkg);
-  const pricing = computePackagePricing(pkg, { nights, passengers, hotel, flight });
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -130,51 +137,42 @@ export default function TripPackageDetails() {
         <div className="container mx-auto px-4 md:px-6 py-8">
           <div className="max-w-5xl mx-auto">
             <div className="relative h-56 md:h-72 rounded-2xl overflow-hidden mb-8 shadow-lg">
-              <img
-                src={`/attached_assets/images/${pkg.image}`}
-                alt={pkg.name}
+              <PlaceImage
+                name={pkg.destinationCity}
+                type="destination"
+                alt={pkg.destinationCity}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = FALLBACK_IMAGE;
-                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
               <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  {pkg.activities.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
+                  <Badge variant="secondary">{pkg.hotel.nights} nights</Badge>
+                  <Badge variant="secondary">{pkg.flight.from} to {pkg.flight.to}</Badge>
                 </div>
                 <h1 className="text-3xl md:text-4xl font-bold drop-shadow-md">
-                  {pkg.name}, {pkg.country}
+                  {pkg.destinationCity}
                 </h1>
                 <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-white/90">
                   <span className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {pkg.name}
-                  </span>
-                  <span className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    {nights} nights
+                    {searchParams.get("startDate") || "Start"} to {searchParams.get("endDate") || "End"}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    {pkg.rating} ({pkg.reviewCount} reviews)
+                    <Users className="h-4 w-4" />
+                    {passengers} traveler{passengers === 1 ? "" : "s"}
                   </span>
                 </div>
               </div>
             </div>
 
-            <p className="text-muted-foreground mb-8">{pkg.description}</p>
+            <p className="text-muted-foreground mb-8">{pkg.comments}</p>
 
             <div className="mb-8">
               <DestinationMap
-                destinationName={pkg.name}
-                country={pkg.country}
-                hotelName={hotel?.name}
-                attractions={pkg.attractions}
+                destinationName={pkg.destinationCity}
+                country={mapCountry}
+                hotelName={pkg.hotel.name}
+                attractions={pkg.attractionsPlan.attractions}
               />
             </div>
 
@@ -187,33 +185,19 @@ export default function TripPackageDetails() {
                       Hotel
                     </CardTitle>
                     <span className="text-lg font-bold text-primary">
-                      ${pricing.hotelCost.toLocaleString()}
+                      ${formatMoney(pkg.hotel.totalHotelCost)}
                     </span>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {hotel ? (
-                      <>
-                        <div className="flex items-start justify-between gap-4">
-                          <p className="font-semibold">{hotel.name}</p>
-                          <span className="flex items-center gap-1 text-sm whitespace-nowrap">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            {hotel.rating} ({hotel.reviewCount})
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          ${hotel.pricePerNight.toLocaleString()} / night × {nights} nights
-                        </p>
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {hotel.amenities.map((a) => (
-                            <Badge key={a} variant="outline" className="text-xs">
-                              {a}
-                            </Badge>
-                          ))}
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No hotel available.</p>
-                    )}
+                    <div className="flex items-start justify-between gap-4">
+                      <p className="font-semibold">{pkg.hotel.name}</p>
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        {pkg.hotel.nights} nights
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      ${formatMoney(pkg.hotel.pricePerNight)} / night x {pkg.hotel.nights} nights
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -224,32 +208,24 @@ export default function TripPackageDetails() {
                       Flight
                     </CardTitle>
                     <span className="text-lg font-bold text-primary">
-                      ${pricing.flightCost.toLocaleString()}
+                      ${formatMoney(pkg.flight.totalFlightCost)}
                     </span>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {flight ? (
-                      <>
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="font-semibold">{flight.airline}</p>
-                            <p className="text-sm text-muted-foreground">{flight.class}</p>
-                          </div>
-                          <div className="text-right text-sm">
-                            <p className="font-semibold">
-                              {flight.departureAirport} → {flight.arrivalAirport}
-                            </p>
-                            <p className="text-muted-foreground">{flight.duration}</p>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          ${flight.price.toLocaleString()} / person × {passengers} travelers
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-semibold">{pkg.flight.airline}</p>
+                        <p className="text-sm text-muted-foreground">
+                          ${formatMoney(pkg.flight.pricePerPerson)} / person
                         </p>
-                      </>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No flight available.</p>
-                    )}
+                      </div>
+                      <div className="text-right text-sm">
+                        <p className="font-semibold">
+                          {pkg.flight.from}{" -> "}{pkg.flight.to}
+                        </p>
+                        <p className="text-muted-foreground">{passengers} traveler{passengers === 1 ? "" : "s"}</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -264,19 +240,29 @@ export default function TripPackageDetails() {
                     </span>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {pkg.attractions.length > 0 ? (
-                      pkg.attractions.map((attraction) => (
-                        <div key={attraction.name} className="flex items-start gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                    {pkg.attractionsPlan.attractions.length > 0 ? (
+                      pkg.attractionsPlan.attractions.map((attraction) => (
+                        <div key={attraction.id || attraction.name} className="flex items-start gap-3 text-sm">
+                          <PlaceImage
+                            name={attraction.name}
+                            country={pkg.destinationCity}
+                            type="attraction"
+                            alt={attraction.name}
+                            className="h-16 w-16 rounded-lg object-cover flex-shrink-0"
+                          />
                           <div>
                             <p className="font-medium">{attraction.name}</p>
-                            <p className="text-muted-foreground">{attraction.description}</p>
+                            <p className="text-muted-foreground">
+                              {attraction.pricePerPerson > 0
+                                ? `$${formatMoney(attraction.pricePerPerson)} / person`
+                                : "Price not included"}
+                            </p>
                           </div>
                         </div>
                       ))
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        No attractions listed for this destination.
+                        No attractions listed for this package.
                       </p>
                     )}
                   </CardContent>
@@ -290,12 +276,12 @@ export default function TripPackageDetails() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Hotel ({nights} nights)</span>
-                      <span>${pricing.hotelCost.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Hotel</span>
+                      <span>${formatMoney(pkg.hotel.totalHotelCost)}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Flights ({passengers} pax)</span>
-                      <span>${pricing.flightCost.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Flights</span>
+                      <span>${formatMoney(pkg.flight.totalFlightCost)}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Attractions</span>
@@ -310,17 +296,16 @@ export default function TripPackageDetails() {
                       <span className="font-semibold">Total</span>
                       <div className="text-right">
                         <span className="text-2xl font-bold text-primary">
-                          ${pricing.total.toLocaleString()}
+                          ${formatMoney(pkg.totalCost)}
                         </span>
                         <p className="text-xs text-muted-foreground">
-                          ${pricing.perPerson.toLocaleString()} per person
+                          ${formatMoney(pkg.perPersonCost)} per person
                         </p>
                       </div>
                     </div>
 
                     <Separator />
 
-                    {/* Sign in first, then /payment with order in URL */}
                     <Button
                       size="lg"
                       className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
@@ -329,7 +314,6 @@ export default function TripPackageDetails() {
                     >
                       Reserve
                     </Button>
-                    {/* Back to /search with same criteria */}
                     <Button
                       variant="outline"
                       size="lg"
@@ -339,7 +323,8 @@ export default function TripPackageDetails() {
                     >
                       Cancel
                     </Button>
-                    <p className="text-xs text-muted-foreground text-center">
+                    <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                      <Check className="h-3 w-3" />
                       You'll be asked to sign in before payment.
                     </p>
                   </CardContent>

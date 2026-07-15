@@ -27,6 +27,24 @@ export class ScrapingController {
       return this.scrapingService.search(query);
     }
 
+    @Get('images/place')
+    getPlaceImage(@Query() query: Record<string, any>) {
+      return this.scrapingService.callScrapingService('api/places/image', query);
+    }
 
+    // Proxy Google Places through the scraper service so the browser never receives the API key.
+    @Get('places/autocomplete')
+    getPlaceAutocomplete(@Query() query: Record<string, any>) {
+      return this.scrapingService.callScrapingService('api/places/autocomplete', query);
+    }
 
+    @Get('places/details')
+    getPlaceDetails(@Query() query: Record<string, any>) {
+      return this.scrapingService.callScrapingService('api/places/details', query);
+    }
+
+    @Get('airports/suggestions')
+    getAirportSuggestions(@Query() query: Record<string, any>) {
+      return this.scrapingService.callScrapingService('api/airports/suggestions', query);
+    }
 }

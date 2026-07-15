@@ -1,105 +1,128 @@
 # TheDevArchitects - Getaway Hub
 
-A trip planning application for booking flights, hotels, and creating travel itineraries.
+A trip planning app for searching destinations, flights, hotels, attractions, and generating travel packages.
 
-## How to Run the App
+## Local Setup
 
-1. **Navigate to frontend directory:**
-   ```bash
-   cd frontend
-   ```
+The app runs as three local services:
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+- Frontend: `http://localhost:3000`
+- NestJS API: `http://localhost:8000/api`
+- Scraper API: `http://localhost:5001`
 
-3. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
+## Prerequisites
 
-4. **Open your browser:**
-   - Go to `http://localhost:3000`
+- Node.js 20 or newer
+- npm
+- Docker Desktop, only if using Docker Compose
 
-## Running With Docker
+## Environment Variables
 
-This project can also be run with Docker Compose from the project root.
+Create or update these files if they do not already exist.
 
-### Prerequisites
-
-- Docker Desktop installed and running
-
-### Start the App
+`frontend/.env`
 
 ```bash
-docker compose up --build
+VITE_BACKEND_URL=http://localhost:8000
+VITE_MAPBOX_ACCESS_TOKEN=your_mapbox_token
+VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 ```
 
-Then open:
+`backend/.env`
+
+```bash
+PORT=8000
+SCRAPER_BASE_URL=http://localhost:5001
+DEEPSEEK_API_KEY=your_deepseek_api_key
+OPENAI_API_KEY=your_openai_api_key
+```
+
+`backend/scraping_api/.env`
+
+```bash
+OXYLABS_USERNAME=your_oxylabs_username
+OXYLABS_PASSWORD=your_oxylabs_password
+GOOGLE_PLACES_API_KEY=your_google_places_api_key
+DUFFEL_ACCESS_TOKEN=your_duffel_access_token
+LITEAPI_KEY=your_liteapi_key
+```
+
+Some features can still load without every key, but live search, AI package generation, maps, flights, and payments need their related keys.
+
+## Run Locally Without Docker
+
+Install dependencies:
+
+```bash
+cd frontend
+npm install
+
+cd ../backend/nest-js-backend
+npm install
+
+cd ../scraping_api
+npm install
+```
+
+Start the scraper API:
+
+```bash
+cd backend/scraping_api
+npm run dev
+```
+
+Start the NestJS API in a second terminal:
+
+```bash
+cd backend/nest-js-backend
+npm run start:dev
+```
+
+Start the frontend in a third terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open:
 
 ```text
 http://localhost:3000
 ```
 
-Services:
+## Run With Docker
+
+From the project root:
+
+```bash
+docker compose up --build
+```
+
+Open:
 
 ```text
-Frontend: http://localhost:3000
-API:      http://localhost:8000/api
-Scraper:  http://localhost:5001
+http://localhost:3000
 ```
 
-### Stop the App
+## Useful Endpoints
 
-Press `Ctrl + C` in the terminal running Docker Compose, then run:
-
-```bash
-docker compose down
+```text
+Frontend:       http://localhost:3000
+NestJS API:     http://localhost:8000/api
+Search:         http://localhost:8000/api/search
+AI packages:    http://localhost:8000/api/ai/vacation-packages
+Scraper API:    http://localhost:5001
 ```
-
-### Useful Commands
-
-Run in the background:
-
-```bash
-docker compose up -d --build
-```
-
-View logs:
-
-```bash
-docker compose logs -f
-```
-
-Rebuild from scratch:
-
-```bash
-docker compose build --no-cache
-docker compose up
-```
-
-Check running containers:
-
-```bash
-docker compose ps
-```
-
-## Features
-
-- Search destinations with autocomplete
-- Date range picker for check-in/check-out
-- Guest and room selection with automatic room adjustment
-- Budget planning
-- Real-time validation
-- Integrated Stripe payment system
-- Django backend for payment processing
 
 ## Tech Stack
 
 - React + TypeScript
-- Tailwind CSS
-- Express.js
 - Vite
-- Django + Python backend
-- Stripe Payments
+- Tailwind CSS
+- NestJS
+- Next.js scraper service
+- DeepSeek / OpenAI API integrations
+- Google Places
+- Mapbox
+- Stripe

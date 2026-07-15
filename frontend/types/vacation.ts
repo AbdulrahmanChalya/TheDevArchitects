@@ -2,6 +2,7 @@ export type VacationPackage ={
   vacationId: string;
   destinationCity: string;
   totalCost: number;
+
   hotel: {
     id: string;
     name: string;
@@ -9,6 +10,7 @@ export type VacationPackage ={
     pricePerNight: number;
     totalHotelCost: number;
   };
+
   flight: {
     id: string;
     airline: string;
@@ -17,6 +19,7 @@ export type VacationPackage ={
     totalFlightCost: number;
     pricePerPerson: number;
   };
+  
   attractionsPlan: {
     attractions: {
       id: string;

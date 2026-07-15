@@ -114,6 +114,7 @@ import {
   GOOGLE_PLACES_TEXT_SEARCH_URL,
 } from "../../../lib/attractions";
 import { normalizeGoogleAttractions } from "../../../parsing/googleAttractionsParser";
+import { fetchWikimediaCityAttractions } from "../../../lib/wikimediaAttractions";
 
 export async function GET(req: NextRequest) {
   try {
@@ -131,10 +132,12 @@ export async function GET(req: NextRequest) {
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "Missing GOOGLE_PLACES_API_KEY env var" },
-        { status: 500 },
-      );
+      const attractions = await fetchWikimediaCityAttractions(city);
+      return NextResponse.json({
+        attractions,
+        source: "wikimedia",
+        googleSearchQuery: null,
+      });
     }
 
     const payload = buildGoogleAttractionsSearchBody({
@@ -167,14 +170,12 @@ export async function GET(req: NextRequest) {
       const text = await res.text();
       console.error("Google Places error:", res.status, text);
 
-      return NextResponse.json(
-        {
-          error: "Google Places API error",
-          status: res.status,
-          details: text,
-        },
-        { status: res.status },
-      );
+      const attractions = await fetchWikimediaCityAttractions(city);
+      return NextResponse.json({
+        attractions,
+        source: "wikimedia",
+        googleSearchQuery: payload.textQuery,
+      });
     }
 
     const data = await res.json();

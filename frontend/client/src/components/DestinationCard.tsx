@@ -1,17 +1,17 @@
-// Displays one destination from destinations.json. Click navigates to
-// /destination/:id (DestinationDetails), not directly to package search.
+// Displays one curated destination and opens its information page.
 // Renders at most three activity tags from the activities array.
 import { Star, MapPin, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
+import { PlaceImage } from "@/components/PlaceImage";
 
 interface DestinationCardProps {
-  id: string; // used in route /destination/:id
+  id: string;
   name: string;
   country: string;
   description: string;
-  image: string; // filename; loaded from /attached_assets/images/
+  imageUrl?: string;
   rating: number;
   reviewCount: number;
   pricePerNight: number;
@@ -24,7 +24,7 @@ export default function DestinationCard({
   name,
   country,
   description,
-  image,
+  imageUrl,
   rating,
   reviewCount,
   pricePerNight,
@@ -33,9 +33,7 @@ export default function DestinationCard({
 }: DestinationCardProps) {
   const [, setLocation] = useLocation();
 
-  // Whole card click → /destination/:id
   const handleClick = () => {
-    console.log(`Destination ${id} clicked`);
     setLocation(`/destination/${id}`);
   };
 
@@ -43,11 +41,23 @@ export default function DestinationCard({
     <Card
       className="overflow-hidden hover-elevate active-elevate-2 transition-all duration-300 cursor-pointer group"
       onClick={handleClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Plan a trip to ${name}, ${country}`}
       data-testid={`card-destination-${id}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img
-          src={`/attached_assets/images/${image}`}
+        <PlaceImage
+          name={name}
+          country={country}
+          imageUrl={imageUrl}
+          type="destination"
           alt={`${name}, ${country}`}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
         />
