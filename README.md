@@ -40,8 +40,6 @@ OPENAI_API_KEY=your_openai_api_key
 `backend/scraping_api/.env`
 
 ```bash
-OXYLABS_USERNAME=your_oxylabs_username
-OXYLABS_PASSWORD=your_oxylabs_password
 GOOGLE_PLACES_API_KEY=your_google_places_api_key
 DUFFEL_ACCESS_TOKEN=your_duffel_access_token
 LITEAPI_KEY=your_liteapi_key
