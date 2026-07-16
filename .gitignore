@@ -283,3 +283,5 @@ docs/
 
 # Local dev launcher (machine-specific)
 start.sh
+
+.firebase/
