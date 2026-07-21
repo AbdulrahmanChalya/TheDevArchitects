@@ -1,4 +1,5 @@
 import { BadGatewayException, HttpException, Injectable } from '@nestjs/common';
+import { GoogleAuth, type IdTokenClient } from 'google-auth-library';
 @Injectable()
 /*
  * Forwards query params to the scraper service and combines 
@@ -6,6 +7,20 @@ import { BadGatewayException, HttpException, Injectable } from '@nestjs/common';
  */
 export class ScrapingService {
     private readonly scraperBaseUrl = process.env.SCRAPER_BASE_URL || 'http://localhost:5001';
+    private readonly scraperAuthAudience = process.env.SCRAPER_AUTH_AUDIENCE?.trim();
+    private readonly googleAuth = new GoogleAuth();
+    private scraperClientPromise?: Promise<IdTokenClient>;
+
+    private async getScraperHeaders(): Promise<Record<string, string>> {
+      if (!this.scraperAuthAudience) return {};
+
+      this.scraperClientPromise ??= this.googleAuth.getIdTokenClient(
+        this.scraperAuthAudience,
+      );
+      const client = await this.scraperClientPromise;
+      const headers = await client.getRequestHeaders();
+      return Object.fromEntries(headers.entries());
+    }
 
     async callScrapingService(endpoint: string, params: Record<string, any>) {
         
@@ -27,7 +42,9 @@ export class ScrapingService {
             }
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: await this.getScraperHeaders(),
+        });
 
         if(!response.ok){
             throw new HttpException(await response.text(), response.status);

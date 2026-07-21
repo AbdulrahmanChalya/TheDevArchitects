@@ -1,9 +1,11 @@
 import { Body, Controller, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import OpenAI from 'openai';
 
 @Controller('assistant')
 export class AssistantController {
   @Post('chat')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async chat(@Body() body: { message: string; pageContext?: any }) {
     const { message, pageContext } = body;
 
