@@ -3,6 +3,7 @@
 // user flow.
 import React, { useState } from "react";
 import { backendUrl } from "@/lib/backendUrl";
+import { authenticatedFetch } from "@/lib/authenticatedFetch";
 
 // Dev-only page: one button hits GET /api/search on the Nest backend.
 const DummyPage = () => {
@@ -28,7 +29,9 @@ const DummyPage = () => {
     setResponse("");
 
     try {
-      const scrapeResponse = await fetch(backendUrl(`/api/search?${searchParams.toString()}`));
+      const scrapeResponse = await authenticatedFetch(
+        backendUrl(`/api/search?${searchParams.toString()}`),
+      );
 
       if (!scrapeResponse.ok) {
         throw new Error(`Scrape request failed: ${scrapeResponse.status}`);
@@ -37,7 +40,7 @@ const DummyPage = () => {
       const scrapedResponse = await scrapeResponse.json();
       console.log("SCRAPED RESULT ->", scrapedResponse);
 
-      const aiResponse = await fetch(backendUrl("/api/ai/vacation-packages"), {
+      const aiResponse = await authenticatedFetch(backendUrl("/api/ai/vacation-packages"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -7,6 +7,7 @@ import {
   X,
 } from "lucide-react";
 import { backendUrl } from "@/lib/backendUrl";
+import { authenticatedFetch } from "@/lib/authenticatedFetch";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -85,7 +86,7 @@ export default function AIAssistantChat() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(backendUrl("/api/assistant/chat"), {
+      const response = await authenticatedFetch(backendUrl("/api/assistant/chat"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -20,9 +20,11 @@ import {
   writeStoredVacationPackages,
 } from "@/lib/backendSearch";
 import { PlaceImage } from "@/components/PlaceImage";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SearchResults() {
   const [location, setLocation] = useLocation();
+  const { user, loading: authLoading } = useAuth();
   const [searchString, setSearchString] = useState(() =>
     typeof window === "undefined" ? "" : window.location.search,
   );
@@ -63,6 +65,13 @@ export default function SearchResults() {
       formParams.arrivalAirport,
   );
 
+  useEffect(() => {
+    if (authLoading || user) return;
+
+    const redirect = `${window.location.pathname}${window.location.search}`;
+    setLocation(`/signin?redirect=${encodeURIComponent(redirect)}`);
+  }, [authLoading, user, setLocation]);
+
   const {
     data: packages = [],
     isLoading,
@@ -71,7 +80,7 @@ export default function SearchResults() {
   } = useQuery<VacationPackage[]>({
     queryKey: getVacationPackagesQueryKey(formParams),
     queryFn: () => fetchVacationPackages(formParams),
-    enabled: hasSearchCriteria,
+    enabled: Boolean(user) && hasSearchCriteria,
     // Avoid the "0 packages" flash when SearchBar already generated packages before navigation.
     initialData: () => readStoredVacationPackages(formParams),
     retry: false,

@@ -519,7 +519,9 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
       rooms: searchData.rooms,
     };
 
-    startBackendSearch(queryClient, formParams);
+    if (user) {
+      startBackendSearch(queryClient, formParams);
+    }
 
     const params = new URLSearchParams({
       destination: formParams.destination,

@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   Post,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import OpenAI from 'openai';
 import { normalizeForVacationModel } from '../scraping/vacation-input-normalizer';
 
@@ -17,6 +18,7 @@ export class AiController {
    * Builds vacationPackages from scraped travel data.
    */
   @Post('vacation-packages')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async generateVacationPackages(@Body() body: GenerateVacationPackagesBody) {
     const { scrapedResponse, query = {} } = body;
 

@@ -1,4 +1,5 @@
 import { backendUrl } from "@/lib/backendUrl";
+import { authenticatedFetch } from "@/lib/authenticatedFetch";
 
 export interface LiveAttraction {
   id: string;
@@ -51,7 +52,7 @@ export async function fetchLiveHotels(params: {
     if (params.startDate) query.set("startDate", params.startDate);
     if (params.endDate) query.set("endDate", params.endDate);
 
-    const response = await fetch(backendUrl(`/api/hotels?${query}`));
+    const response = await authenticatedFetch(backendUrl(`/api/hotels?${query}`));
     if (!response.ok) return null;
     return response.json() as Promise<{ rooms: LiveHotelRoom[] }>;
   } catch {
