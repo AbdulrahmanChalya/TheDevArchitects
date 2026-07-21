@@ -11,6 +11,10 @@ export class ScrapingService {
     private readonly googleAuth = new GoogleAuth();
     private scraperClientPromise?: Promise<IdTokenClient>;
 
+    /**
+     * Adds a Google-signed identity token when the scraper is private on Cloud
+     * Run. Local development leaves the audience unset and sends no IAM token.
+     */
     private async getScraperHeaders(): Promise<Record<string, string>> {
       if (!this.scraperAuthAudience) return {};
 
@@ -24,7 +28,7 @@ export class ScrapingService {
 
     async callScrapingService(endpoint: string, params: Record<string, any>) {
         
-        //this is insane to look at but basically this will remove any / before api/data
+        // Normalize the endpoint so it resolves beneath the configured base URL.
         const url = new URL(endpoint.replace(/^\/+/, ''), `${this.scraperBaseUrl}/`); 
 
 

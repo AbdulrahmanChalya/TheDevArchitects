@@ -7,6 +7,7 @@ export class AuthenticationRequiredError extends Error {
   }
 }
 
+/** Sends an API request with the current Firebase user's ID token. */
 async function requestWithToken(
   input: RequestInfo | URL,
   init: RequestInit,
@@ -22,6 +23,10 @@ async function requestWithToken(
   return fetch(input, { ...init, headers });
 }
 
+/**
+ * Fetches a protected API route and retries once with a refreshed token when
+ * the server reports that the cached token is no longer valid.
+ */
 export async function authenticatedFetch(
   input: RequestInfo | URL,
   init: RequestInit = {},

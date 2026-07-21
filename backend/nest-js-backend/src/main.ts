@@ -14,6 +14,7 @@ async function bootstrap() {
   });
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
+  // Reject unexpectedly large payloads before they reach paid API integrations.
   app.useBodyParser('json', { limit: '256kb' });
   app.useBodyParser('urlencoded', { extended: true, limit: '64kb' });
   app.setGlobalPrefix('api');

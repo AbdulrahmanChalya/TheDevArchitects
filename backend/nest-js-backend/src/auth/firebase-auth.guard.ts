@@ -14,6 +14,7 @@ export type AuthenticatedRequest = Request & {
   user?: DecodedIdToken;
 };
 
+/** Requires a valid Firebase bearer token unless a route is marked `@Public()`. */
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
   constructor(
@@ -37,6 +38,7 @@ export class FirebaseAuthGuard implements CanActivate {
     }
 
     try {
+      // Store verified claims for downstream authorization and per-user throttling.
       request.user = await this.firebaseAuth.verifyIdToken(match[1]);
       return true;
     } catch {
