@@ -4,7 +4,7 @@ import path from "path";
 import { copyFileSync, mkdirSync } from "node:fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-const staticDataFiles = ["airports.json", "destinations.json", "recommendations.json"];
+const staticDataFiles = ["destinations.json", "recommendations.json"];
 
 function copyStaticData() {
   return {
