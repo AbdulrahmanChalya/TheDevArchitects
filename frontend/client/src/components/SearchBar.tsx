@@ -153,9 +153,6 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [dateError, setDateError] = useState("");
   const [formError, setFormError] = useState("");
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  // After geolocation, departure airport list is replaced with API/fallback nearby results
-  const [nearbyAirports, setNearbyAirports] = useState<string[]>([]);
   const travelersRef = useRef<HTMLDivElement>(null);
   const dateRef = useRef<HTMLDivElement>(null);
 
@@ -167,6 +164,8 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
   const [filteredDestinations, setFilteredDestinations] = useState<DestinationSuggestion[]>([]);
   const [filteredDepartureAirports, setFilteredDepartureAirports] = useState<string[]>([]);
   const [filteredArrivalAirports, setFilteredArrivalAirports] = useState<string[]>([]);
+  const [departureAirportStatus, setDepartureAirportStatus] =
+    useState<"idle" | "loading">("idle");
   const [destinationAutocompleteStatus, setDestinationAutocompleteStatus] =
     useState<"idle" | "loading">("idle");
   const [arrivalAirportStatus, setArrivalAirportStatus] =
@@ -174,6 +173,8 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
   const destinationRef = useRef<HTMLDivElement>(null);
   const departureAirportRef = useRef<HTMLDivElement>(null);
   const arrivalAirportRef = useRef<HTMLDivElement>(null);
+  const departureRequestRef = useRef(0);
+  const departureDebounceRef = useRef<number | null>(null);
   const arrivalRequestRef = useRef(0);
 
   const airportLabels = airports.map(formatAirportLabel);
@@ -191,7 +192,7 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
     searchData.budget,
   ]);
 
-  // Match against airports already loaded from Duffel or the local departure fallback.
+  // Match against airports already loaded from Duffel for the selected destination.
   const getArrivalAirportsForDestination = (destination: string) => {
     const target = normalizeCity(destination);
     if (!target) return [];
@@ -236,34 +237,11 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadSearchData() {
-      try {
-        // Keep a local fallback because Google city places do not provide flight-ready IATA codes.
-        const airportsResponse = await fetch("/backend/airports.json");
-
-        if (!airportsResponse.ok) {
-          throw new Error("Airport autocomplete data request failed.");
-        }
-
-        const loadedAirports = (await airportsResponse.json()) as Airport[];
-        if (cancelled) return;
-
-        const loadedAirportLabels = loadedAirports.map(formatAirportLabel);
-
-        setAirports(loadedAirports);
-        setFilteredDepartureAirports(loadedAirportLabels);
-        setFilteredArrivalAirports(loadedAirportLabels);
-      } catch (error) {
-        console.warn("Could not load airport autocomplete data:", error);
-      }
-    }
-
-    void loadSearchData();
-
     return () => {
-      cancelled = true;
+      departureRequestRef.current += 1;
+      if (departureDebounceRef.current !== null) {
+        window.clearTimeout(departureDebounceRef.current);
+      }
     };
   }, []);
 
@@ -364,94 +342,6 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
       }
     }
   }, []);
-
-  // Haversine formula — distance in km between two lat/lng points
-  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-    const R = 6371; // Earth's radius in kilometers
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
-
-  // Ask the browser for the user's location, then fetch nearby airports from
-  // the API (falling back to a local distance calculation if that fails).
-  const getCurrentLocation = async () => {
-    console.log("getCurrentLocation called");
-    
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by this browser");
-      return;
-    }
-
-    // Clear any existing nearby airports first
-    setNearbyAirports([]);
-    
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        console.log("Location received:", position.coords);
-        const { latitude, longitude } = position.coords;
-        
-        try {
-          const response = await fetch(
-            backendUrl(`/api/airports/nearby?lat=${latitude}&lng=${longitude}&limit=5`),
-          );
-          
-          if (!response.ok) {
-            throw new Error('Failed to fetch nearby airports');
-          }
-          
-          const airports = await response.json();
-          console.log("Nearby airports from API:", airports);
-          
-          const nearby = airports.map((airport: any) => 
-            `${airport.code} - ${airport.name} (${airport.city}) - ${airport.distance}km`
-          );
-          
-          setNearbyAirports(nearby);
-          setFilteredDepartureAirports(nearby);
-          alert(`Found ${nearby.length} nearby airports based on your location!`);
-        } catch (error) {
-          console.error("Error fetching nearby airports:", error);
-          
-          // Fallback to local airport data.
-          const airportsWithDistance = airports.map((airport) => ({
-            label: formatAirportLabel(airport),
-            distance: calculateDistance(latitude, longitude, airport.lat, airport.lng)
-          }));
-
-          const nearby = airportsWithDistance
-            .sort((a, b) => a.distance - b.distance)
-            .slice(0, 5)
-            .map(airport => airport.label);
-          
-          setNearbyAirports(nearby);
-          setFilteredDepartureAirports(nearby);
-          alert(`Found ${nearby.length} nearby airports (using fallback data)`);
-        }
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        
-        if (error.code === 1) {
-          alert("Location access denied. Please click the location icon in your browser's address bar and select 'Allow' to enable location access.");
-        } else {
-          alert("Unable to get your location. Please try again or select airports manually.");
-        }
-        
-        // Fallback to all loaded airports
-        setFilteredDepartureAirports(airportLabels);
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 15000,
-        maximumAge: 600000
-      }
-    );
-  };
 
   // When adults/children change, bump room count if guests exceed 4 per room
   const autoAdjustRooms = (adults: number, children: number, currentRooms: number) => {
@@ -677,15 +567,42 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
     setShowDestinationSuggestions(true);
   };
 
-  // Uses nearby list after geolocation, otherwise the loaded airport list.
+  // Fetch live, flight-ready departure airport suggestions from Duffel.
   const handleDepartureAirportChange = (value: string) => {
     setSearchData({ ...searchData, departureAirport: value });
-    const baseAirports = nearbyAirports.length > 0 ? nearbyAirports : airportLabels;
-    const filtered = baseAirports.filter(airport =>
-      airport.toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredDepartureAirports(filtered);
     setShowDepartureAirportSuggestions(true);
+
+    const requestId = ++departureRequestRef.current;
+    const input = value.trim();
+
+    if (departureDebounceRef.current !== null) {
+      window.clearTimeout(departureDebounceRef.current);
+    }
+
+    if (input.length < 2) {
+      setDepartureAirportStatus("idle");
+      setFilteredDepartureAirports([]);
+      return;
+    }
+
+    setDepartureAirportStatus("loading");
+    setFilteredDepartureAirports([]);
+
+    departureDebounceRef.current = window.setTimeout(async () => {
+      try {
+        const suggestions = await fetchAirportSuggestions(input);
+        if (requestId !== departureRequestRef.current) return;
+        setFilteredDepartureAirports(suggestions.map(formatAirportLabel));
+      } catch (error) {
+        if (requestId !== departureRequestRef.current) return;
+        console.warn("Live departure airport suggestions unavailable:", error);
+        setFilteredDepartureAirports([]);
+      } finally {
+        if (requestId === departureRequestRef.current) {
+          setDepartureAirportStatus("idle");
+        }
+      }
+    }, 250);
   };
 
   // Filter arrival airport suggestions as the user types.
@@ -702,7 +619,13 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
 
   // User picked one airport from the departure suggestions.
   const selectDepartureAirport = (airport: string) => {
+    departureRequestRef.current += 1;
+    if (departureDebounceRef.current !== null) {
+      window.clearTimeout(departureDebounceRef.current);
+      departureDebounceRef.current = null;
+    }
     setSearchData({ ...searchData, departureAirport: airport });
+    setDepartureAirportStatus("idle");
     setShowDepartureAirportSuggestions(false);
   };
 
@@ -895,32 +818,21 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
           </div>
           {showDepartureAirportSuggestions && (
             <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-auto">
-              {/* Use GPS to load nearby departure airports */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  getCurrentLocation();
-                }}
-                className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm text-blue-600 border-b border-gray-100 font-medium transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Use Current Location for Nearby Airports
-                </div>
-              </button>
-              
-              {nearbyAirports.length > 0 && (
-                <div className="px-4 py-2 text-xs text-gray-500 border-b bg-gray-50">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    Nearby airports based on your location
-                  </div>
+              {searchData.departureAirport.trim().length < 2 && (
+                <div className="px-4 py-3 text-sm text-muted-foreground">
+                  Type at least 2 letters to find an airport
                 </div>
               )}
+
+              {departureAirportStatus === "loading" && (
+                <div className="px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Finding departure airports...
+                </div>
+              )}
+
               {/* Each row: set departure airport */}
-              {filteredDepartureAirports.map((airport) => (
+              {departureAirportStatus !== "loading" && filteredDepartureAirports.map((airport) => (
                 <button
                   key={airport}
                   type="button"
@@ -933,6 +845,14 @@ export default function SearchBar({ variant = "hero", destinationPreset }: Searc
                   </div>
                 </button>
               ))}
+
+              {searchData.departureAirport.trim().length >= 2
+                && departureAirportStatus !== "loading"
+                && filteredDepartureAirports.length === 0 && (
+                <div className="px-4 py-3 text-sm text-muted-foreground">
+                  No airports found
+                </div>
+              )}
             </div>
           )}
         </div>
