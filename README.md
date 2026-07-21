@@ -33,6 +33,9 @@ VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 ```bash
 PORT=8000
 SCRAPER_BASE_URL=http://localhost:5001
+# Set this to the private Cloud Run scraper URL in production.
+# Leave it unset for local development.
+SCRAPER_AUTH_AUDIENCE=
 DEEPSEEK_API_KEY=your_deepseek_api_key
 OPENAI_API_KEY=your_openai_api_key
 ```
@@ -45,7 +48,15 @@ DUFFEL_ACCESS_TOKEN=your_duffel_access_token
 LITEAPI_KEY=your_liteapi_key
 ```
 
-Some features can still load without every key, but live search, AI package generation, maps, flights, and payments need their related keys.
+The frontend sends the signed-in user's Firebase ID token to protected API routes. The
+NestJS API verifies that token before allowing search, flight, hotel, AI package, or
+assistant requests. Public discovery routes, such as place and airport suggestions,
+remain available without signing in and are rate limited.
+
+In production, set `SCRAPER_AUTH_AUDIENCE` to the same HTTPS URL used for
+`SCRAPER_BASE_URL`. The NestJS API will then use its Cloud Run service identity when
+calling the scraper. Grant that service identity the Cloud Run Invoker role before
+removing public access from the scraper.
 
 ## Run Locally Without Docker
 
